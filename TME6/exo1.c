@@ -240,12 +240,58 @@ int average_degree_density(char * ENTREE, int *N, int nb_nodes){
   return 1;
 }
 
+void swap(int *x,int *y)
+{
+    int temp;
+    temp = *x;
+    *x = *y;
+    *y = temp;
+}
+ 
+int choose_pivot(int i,int j )
+{
+    return((i+j) /2);
+}
+
+void quicksort(int* list, int *r_index_node, int m,int n)
+{
+    int key,i,j,k;
+    if( m < n)
+    {
+        k = choose_pivot(m,n);
+        swap(&list[m],&list[k]);
+        swap(&r_index_node[m],&r_index_node[k]);
+        key = list[m];
+        i = m+1;
+        j = n;
+        while(i <= j)
+        {
+            while((i <= n) && (list[i] >= key))
+                i++;
+            while((j >= m) && (list[j] < key))
+                j--;
+            if( i < j){
+	            swap(&list[i],&list[j]);
+	            swap(&r_index_node[i],&r_index_node[j]);
+
+            }
+                
+        }
+        /* swap two elements */
+        swap(&list[m],&list[j]);
+        swap(&r_index_node[m],&r_index_node[j]);
+ 
+        /* recursively sort the lesser list */
+        quicksort(list, r_index_node,m,j-1);
+        quicksort(list, r_index_node,j+1,n);
+    }
+}
 
 // exo 3
-int * MKSCORE(char * ENTREE, int nb_iterations, int max_node){
+int * MKSCORE(char * ENTREE, int nb_iterations, int max_node, float * r){
   int t=0;
   int i=0,j=0;
-  int *r = (int*)malloc(sizeof(int)*(max_node+1));
+  // int *r = (int*)malloc(sizeof(int)*(max_node+1));
 
   FILE * f_in;
   char line[SIZE_OF_LINE];
@@ -254,27 +300,29 @@ int * MKSCORE(char * ENTREE, int nb_iterations, int max_node){
     return 0;
   }
 
-  for(i=0; i<max_node; i++){
-    r[i] = 0;
-    r[j] = 0;
+  for(i=0; i<=max_node; i++){
+    r[i] = 0.0;
+    r[j] = 0.0;
   }
-
+  
   for(t=0; t<nb_iterations; t++){
-    // a changer !!!
+    // 
     fseek(f_in, 0, SEEK_SET);
     while (fgets(line, SIZE_OF_LINE, f_in) != NULL) {
       IGNORE_COMMENTS;
       sscanf(line, "%d %d", & i, & j);
       if(r[i] <= r[j]){
-        r[i]++;
+        r[i] = r[i]+1.0;
       }else{
-        r[j]++;
+        r[j] = r[j]+1.0;
       }
     }
   }
+
   for(i=0; i<max_node; i++){
-    r[i] /=t;
+    r[i]= (float)r[i]/((float)t);
   }
+  
   return r;
 }
 
@@ -302,15 +350,28 @@ int main(int argc, char *argv[]) {
   double temps;
   int nb_nodes = 0, max_node=0;
   char * in_put = argv[1];
-
+	int j =0;
+  
   nb_nodes = nbEdgesAndNodes(in_put, &max_node);
   nb_nodes ++; // je sais pas pk mais quand je l'enlever ça fait malloc(): memory corruption
 
   clock_t start = clock();
-  exo1(in_put, nb_nodes, max_node);
+  // exo1(in_put, nb_nodes, max_node);
 
   // exo3
-  // MKSCORE(argv[1], NB_ITERATIONS, max_node);
+  float * r = (float*)malloc(sizeof(float)*(max_node+1));
+  int * r_index_node = (int*)malloc(sizeof(int)*(max_node+1));
+  MKSCORE(argv[1], NB_ITERATIONS, max_node, r);
+  for(j=0; j<=max_node; j++){
+		r_index_node[j] = j;
+  }
+  
+  quicksort(r, r_index_node,0,max_node);        
+	
+	/*for(j=0; j<=max_node; j++){
+  	printf("r_index_node[%d]=%d\n", j,r_index_node[j]);
+  }*/
+  average_degree_density(in_put, r_index_node, max_node);
 
   temps = (double)(clock()-start)/(double)CLOCKS_PER_SEC;
   printf("\nRun terminée en %.10f seconde(s)!\n", temps);
