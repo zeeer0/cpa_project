@@ -86,7 +86,7 @@ int nbEdgesAndNodes(char* in_put, int * max_node){
   }
  }
 
- printf("File name : %s\nNumber of nodes : %llu\nNumber of edges : %llu\n", in_put, nbNode, nbEdge);
+ // printf("File name : %s\nNumber of nodes : %llu\nNumber of edges : %llu\n", in_put, nbNode, nbEdge);
 
  free(buffer);
  map_deinit(&hash);
@@ -220,7 +220,7 @@ int* k_core_decomposition(tas* heap, int * index_tab, int* N){
 *
 **/
 
-void average_degree_density(char * in_put, int *N, int nb_nodes){
+int average_degree_density(char * in_put, int *N, int nb_nodes){
   float tmp_max=0.0;
   float max_density = 0.0;
   float index_max_density = 0.0;
@@ -264,6 +264,7 @@ void average_degree_density(char * in_put, int *N, int nb_nodes){
     }
   }
   printf("Average degree densit=%f\nEdge density=%f\nSize of a densest core ordering prefix=%d\n", max_density, index_max_density, val_max_density);
+  return 1;
 }
 
 /**
@@ -302,22 +303,22 @@ void quicksort(int* list, int *r_index_node, int m,int n){
       key = list[m];
       i = m+1;
       j = n;
-        while(i <= j){
-            while((i <= n) && (list[i] >= key))
-                i++;
-            while((j >= m) && (list[j] < key))
-                j--;
-            if(list[i]!=-1.0 && i < j){
-              swap(&list[i],&list[j]);
-	            swap(&r_index_node[i],&r_index_node[j]);
-            }
-        }
-        // swap two elements
-        swap(&list[m],&list[j]);
-        swap(&r_index_node[m],&r_index_node[j]);
-        // recursively sort the lesser list
-        quicksort(list, r_index_node,m,j-1);
-        quicksort(list, r_index_node,j+1,n);
+      while(i <= j){
+          while((i <= n) && (list[i] >= key))
+              i++;
+          while((j >= m) && (list[j] < key))
+              j--;
+          if(list[i]!=-1.0 && i < j){
+            swap(&list[i],&list[j]);
+            swap(&r_index_node[i],&r_index_node[j]);
+          }
+      }
+      // swap two elements
+      swap(&list[m],&list[j]);
+      swap(&r_index_node[m],&r_index_node[j]);
+      // recursively sort the lesser list
+      quicksort(list, r_index_node,m,j-1);
+      quicksort(list, r_index_node,j+1,n);
     }
 }
 
@@ -330,7 +331,7 @@ void quicksort(int* list, int *r_index_node, int m,int n){
 * r :
 * r_index_node :
 **/
-void MKSCORE(char * in_put, int nb_iterations, int max_node, float * r, int * r_index_node){
+int MKSCORE(char * in_put, int nb_iterations, int max_node, float * r, int * r_index_node){
   int t=0, i=0, j=0;
 
   FILE * f_in;
@@ -359,12 +360,12 @@ void MKSCORE(char * in_put, int nb_iterations, int max_node, float * r, int * r_
       }
     }
   }
-
   for(i=0; i<max_node; i++){
     if(r[i]==-1.0)
       continue;
     r[i]= (float)r[i]/((float)t);
   }
+  return 1;
 }
 
 /**
@@ -410,14 +411,13 @@ void exo3(char * in_put, int max_node){
   float * r = (float*)malloc(sizeof(float)*(max_node+1));
   int * r_index_node = (int*)malloc(sizeof(int)*(max_node+1));
 
-  // initialization of both lists r_index_node and r to -1
+  // initialization of r_index_node and r to -1
   for(j=0; j<=max_node; j++){
     r_index_node[j] = -1;
     r[j] = -1.0;
   }
 
   MKSCORE(in_put, NB_ITERATIONS, max_node, r, r_index_node);
-
   // sort r
   quicksort(r, r_index_node,0,max_node);
 
@@ -435,12 +435,12 @@ int main(int argc, char *argv[]) {
   char * in_put = argv[1];
 
   nb_nodes = nbEdgesAndNodes(in_put, &max_node);
-  nb_nodes ++; // je sais pas pk mais quand je l'enlever ça fait malloc(): memory corruption
+  nb_nodes ++; // je sais pas pk mais quand je l'enleve ça fait malloc(): memory corruption
 
   clock_t start = clock();
-  exo1(in_put, nb_nodes, max_node);
+  //exo1(in_put, nb_nodes, max_node);
 
-  // exo3(in_put, max_node);
+  exo3(in_put, max_node-1);
 
   temps = (double)(clock()-start)/(double)CLOCKS_PER_SEC;
   printf("\nRun terminée en %.10f seconde(s)!\n", temps);
