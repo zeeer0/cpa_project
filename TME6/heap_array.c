@@ -55,10 +55,6 @@ void resize(tas *t, size_t newsize) {
    tab[c->node] = t->size - 1;
  }
 
-key* mintas(tas *t) {
-  return t->a[0];
-}
-
 int empty(tas *t) {
   return t->size == 0;
 }
@@ -66,7 +62,7 @@ int empty(tas *t) {
 /* Supprime et renvoie la clé minimale d'un tas.
    Respecte l'invariant
  */
-key * supprmin(tas *t, int* index_tab) {
+key * delete_min(tas *t, int* index_tab) {
   if(t->a[0] != NULL){
     index_tab[t->a[0]->node] = -1;
     key *c = t->a[0];

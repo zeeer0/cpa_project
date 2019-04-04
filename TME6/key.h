@@ -5,8 +5,8 @@ typedef struct {
     unsigned int node;
     unsigned int degree;
     int core;
-    int * voisins;
-    unsigned int nb_voisins;
+    int * neighbors;
+    unsigned int nb_neighbors;
 } key;
 
 key * parse_key(int node, int degree);

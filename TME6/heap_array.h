@@ -14,7 +14,7 @@ int empty(tas *t);
 
 key* mintas(tas *t);
 
-key * supprmin(tas *t, int* index_tab);
+key * delete_min(tas *t, int* index_tab);
 
 tas * mktas(int nb_nodes);
 

@@ -1,31 +1,20 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include<time.h>
-
 #include <string.h>
-#include <fcntl.h>
+#include <time.h>
 #include <limits.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
+#include <fcntl.h>
 #include <time.h>
 #include <math.h>
+
 #include "map.h"
 #include "utils.h"
-
 #include "key.h"
 #include "heap_array.h"
 
-#define NB_IT 20
 #define SIZE_OF_LINE 100
-#define SIZE 4
-#define INFINITY_FLOAT 1.1
-#define INFINITY_INT 1
 #define NB_ITERATIONS 2
-
-#define NB_ITERATIONS 2
-
 
 #define IGNORE_COMMENTS char is_comment;        \
   sscanf(line, "%c", &is_comment);              \
@@ -36,8 +25,15 @@
 #define MIN(a, b)((((float)a) < ((float)b)) ? ((float)a) : ((float)b))
 #define MAX(a, b)((((float)a) > ((float)b)) ? ((float)a) : ((float)b))
 
-int nbEdgesAndNodes(char* path, int * max_node){
- int fd = open(path, O_RDWR);
+/**
+* Function to count the number of nodes and edges in file
+*   and change the value of max_node
+*
+* in_put : path of file inPut
+* max_node : the max number of the nodes
+**/
+int nbEdgesAndNodes(char* in_put, int * max_node){
+ int fd = open(in_put, O_RDWR);
 
  int size = INT_MAX-1, nbRead, lastIndice = 0, indice=0;
  unsigned long long nbEdge=0, nbNode=0;
@@ -90,7 +86,7 @@ int nbEdgesAndNodes(char* path, int * max_node){
   }
  }
 
- printf("File name : %s\nNumber of nodes : %llu\nNumber of edges : %llu\n", path, nbNode, nbEdge);
+ printf("File name : %s\nNumber of nodes : %llu\nNumber of edges : %llu\n", in_put, nbNode, nbEdge);
 
  free(buffer);
  map_deinit(&hash);
@@ -98,114 +94,143 @@ int nbEdgesAndNodes(char* path, int * max_node){
  return nbNode;
 }
 
-int notisvalueinarray(int *arr, int val, int size){
-    int i;
-    for (i=0; i < size; i++) {
-        if (arr[i] == val)
-            return 0;
-    }
-    return 1;
-}
-
-tas* create_heap(char * ENTREE, int*index_tab, int nb_nodes) {
+/**
+* Fonction to create heap structure
+*   and index_tab which saves node indexes in the heap
+*
+* in_put : path of file inPut
+* index_tab : the index for each node in the heap (initialized with -1)
+* nb_node : the number of nodes in the file
+*
+* return : heap with every node read
+**/
+tas* create_heap(char * in_put, int*index_tab, int nb_nodes) {
   FILE * f_in;
   char line[SIZE_OF_LINE];
-  if ((f_in = fopen(ENTREE, "r")) == NULL) {
-    fprintf(stderr, "\nErreur: Impossible de lire le fichier %s\n", ENTREE);
+  if ((f_in = fopen(in_put, "r")) == NULL) {
+    fprintf(stderr, "\nErreur: Impossible de lire le fichier %s\n", in_put);
     return 0;
   }
 
-  int i = 0, j=0;
-  int nb_ajout_key=0;
+  int i = 0, j=0; // the nodes that will be read in the file
+  int index_node=0; // to save the current index in our heap
 
-  // init du tas
+  // heap initialization
   tas* heap = mktas(nb_nodes);
 
   fseek(f_in, 0, SEEK_SET);
-  int d=1;
   while (fgets(line, SIZE_OF_LINE, f_in) != NULL) {
     IGNORE_COMMENTS;
     sscanf(line, "%d %d", & i, & j);
-    // nb_ajout_key > pour l'enmplacement de l'element a ajouter dans le tas (le prochaine emplacement vide)
-    // pour le noeud i
-    if(index_tab[i]==-1){
-			ajout(heap, parse_key(i, 1), index_tab);
-			index_tab[i]=nb_ajout_key; // garder l'emplacement dans le tas
-			nb_ajout_key++;
-      heap->a[index_tab[i]]->voisins[heap->a[index_tab[i]]->degree -1] = j;
 
-      heap->a[index_tab[i]]->nb_voisins =1;
-		}else{
-			//le degre du noeud de numero stocké dans la case u du tableau
-        heap->a[index_tab[i]]->degree = heap->a[index_tab[i]]->degree+1;
-        heap->a[index_tab[i]]->voisins = realloc(heap->a[index_tab[i]]->voisins, heap->a[index_tab[i]]->degree*sizeof(int));
-        heap->a[index_tab[i]]->voisins[heap->a[index_tab[i]]->degree -1] = j;
-        heap->a[index_tab[i]]->nb_voisins ++;
+    if(index_tab[i]==-1){ /*the node i does not exist in the heap*/
+      // add the node in heap
+      ajout(heap, parse_key(i, 1), index_tab);
+      // save the node location in the index table
+      index_tab[i]=index_node;
+      // increment the index for nodes
+			index_node++;
+      // add node j as neighbors of node i
+      heap->a[index_tab[i]]->neighbors[heap->a[index_tab[i]]->degree -1] = j;
+      heap->a[index_tab[i]]->nb_neighbors =1;
+		}else{ /*the node i exist in the heap*/
+        // increment the degree of i
+        heap->a[index_tab[i]]->degree ++;
+        // reallocate the list of neighbors and add node j as neighbors of i
+        heap->a[index_tab[i]]->neighbors = realloc(heap->a[index_tab[i]]->neighbors, heap->a[index_tab[i]]->degree*sizeof(int));
+        heap->a[index_tab[i]]->neighbors[heap->a[index_tab[i]]->degree -1] = j;
+        heap->a[index_tab[i]]->nb_neighbors ++;
 		}
-    // pour le noeud j
-    if(index_tab[j]==-1){
+
+    if(index_tab[j]==-1){ /*the node j does not exist in the heap*/
+      // add the node in heap
 			ajout(heap, parse_key(j, 1), index_tab);
-			index_tab[j]=nb_ajout_key;
-			nb_ajout_key++;
-      heap->a[index_tab[j]]->voisins[heap->a[index_tab[j]]->degree -1] = i;
-      heap->a[index_tab[j]]->nb_voisins++;
-		}else{
-			//le degre du noeud de numero stocké dans la case v du tableau
-      heap->a[index_tab[j]]->degree = heap->a[index_tab[j]]->degree+1;
-      heap->a[index_tab[j]]->voisins = realloc(heap->a[index_tab[j]]->voisins, heap->a[index_tab[j]]->degree*sizeof(int));
-      heap->a[index_tab[j]]->voisins[heap->a[index_tab[j]]->degree -1] = i;
-      heap->a[index_tab[j]]->nb_voisins++;
+      // save the node location in the index table
+			index_tab[j]=index_node;
+      // increment the index for nodes
+			index_node++;
+      // add node i as neighbors of node j
+      heap->a[index_tab[j]]->neighbors[heap->a[index_tab[j]]->degree -1] = i;
+      heap->a[index_tab[j]]->nb_neighbors++;
+		}else{ /*the node i exist in the heap*/
+      // increment the degree of j
+      heap->a[index_tab[j]]->degree++;
+      // reallocate the list of neighbors and add node i as neighbors of j
+      heap->a[index_tab[j]]->neighbors = realloc(heap->a[index_tab[j]]->neighbors, heap->a[index_tab[j]]->degree*sizeof(int));
+      heap->a[index_tab[j]]->neighbors[heap->a[index_tab[j]]->degree -1] = i;
+      heap->a[index_tab[j]]->nb_neighbors++;
 		}
-    d++;
   }
+  // building the heap structure
   heap = consiter(heap->a, heap->size, index_tab);
+
   return heap;
 }
 
-int* k_core(tas* heap, int * index_tab, int* N){
-  int i = heap->size;
-  int c = 0;
-  unsigned int j = 0;
-  key * v ;
+/**
+* The order of removal of each node from the heap
+*
+* heap : heap
+* index_tab : the index for each node in the heap
+* N : list to save the delete order of each node from the heap
+*
+* return : a node list with their delete order in the heap
+**/
+int* k_core_decomposition(tas* heap, int * index_tab, int* N){
+  int i = heap->size; // the current size of the heap
+  int c = 0; // core
+  unsigned int j = 0; // the current index
+  key * v ; //  key in heap (the item that will be deleted in the heap)
 
   while(!empty(heap)){
     v = heap->a[0];
     c = MAX(c,v->degree);
-    v->degree = c;
-    for(j=0; j<v->nb_voisins;j++){
-      if(index_tab[v->voisins[j]]==-1){
+    v->core = c;
+    for(j=0; j<v->nb_neighbors;j++){ /*decrement the degree for each neighbor of v */
+      if(index_tab[v->neighbors[j]]==-1){ /*the neighbor at the index j does not exist*/
         continue;
       }
-      heap->a[index_tab[v->voisins[j]]]->degree --;
-      percoler(heap, index_tab[v->voisins[j]], index_tab);
+      // decrement the degree of
+      heap->a[index_tab[v->neighbors[j]]]->degree --;
+      // reorganization of the heap
+      percoler(heap, index_tab[v->neighbors[j]], index_tab);
     }
-    supprmin(heap, index_tab);
+    // delete the min
+    delete_min(heap, index_tab);
+    // save the deletion order of the node v
     N[v->node]=i;
+    // decrement i
     i--;
   }
-  printf("c=%d\n", c);
-  printf("Fin K-Core\n");
+  printf("Max core=%d\n", c);
   free(heap);
   return N;
 }
 
-int average_degree_density(char * ENTREE, int *N, int nb_nodes){
+/**
+* For each graph, calculate
+*   (i)the average degree density,
+*   (ii) the edge density and
+*   (iii) the size of a densest core ordering prefix1
+*
+* in_put : path of file inPut
+* nb_node : the number of nodes in the file
+*
+**/
+
+void average_degree_density(char * in_put, int *N, int nb_nodes){
   int u=0;
   int *degree_density = (int*)malloc(sizeof(int)*(nb_nodes));
 
   for(u=0; u<=nb_nodes; u++){
     degree_density[u] = 0;
-  }
-
-  for(u=0; u<=nb_nodes; u++){
     degree_density[N[u]] = 0;
   }
-  degree_density[0] = 0;
 
   FILE * f_in;
   char line[SIZE_OF_LINE];
-  if ((f_in = fopen(ENTREE, "r")) == NULL) {
-    fprintf(stderr, "\nErreur: Impossible de lire le fichier %s\n", ENTREE);
+  if ((f_in = fopen(in_put, "r")) == NULL) {
+    fprintf(stderr, "\nErreur: Impossible de lire le fichier %s\n", in_put);
     return 0;
   }
 
@@ -231,56 +256,49 @@ int average_degree_density(char * ENTREE, int *N, int nb_nodes){
   for(u=1; u<nb_nodes;u++){
     tmp_max = (degree_density[u]/(float)u);
     if(max_density<tmp_max){
-      index_max_density = degree_density[u]/(float)(u*(u-1));
+      index_max_density = (2*degree_density[u])/(float)(u*(u-1));
       max_density = tmp_max;
       val_max_density = u;
     }
   }
   printf("Average degree densit=%f\nEdge density=%f\nSize of a densest core ordering prefix=%d\n", max_density, index_max_density, val_max_density);
-  return 1;
 }
 
-void swap(int *x,int *y)
-{
+void swap(int *x,int *y){
     int temp;
     temp = *x;
     *x = *y;
     *y = temp;
 }
- 
-int choose_pivot(int i,int j )
-{
-    return((i+j) /2);
-}
 
-void quicksort(int* list, int *r_index_node, int m,int n)
-{
-    int key,i,j,k;
-    if( m < n)
-    {
-        k = choose_pivot(m,n);
-        swap(&list[m],&list[k]);
-        swap(&r_index_node[m],&r_index_node[k]);
-        key = list[m];
-        i = m+1;
-        j = n;
-        while(i <= j)
-        {
+
+void quicksort(float* list, int *r_index_node, int m,int n){
+    float key;
+    int i,j,k;
+    if( m < n){
+      // choose_pivot
+      k = ((m+n) /2);
+
+      swap(&list[m],&list[k]);
+      swap(&r_index_node[m],&r_index_node[k]);
+
+      key = list[m];
+      i = m+1;
+      j = n;
+        while(i <= j){
             while((i <= n) && (list[i] >= key))
                 i++;
             while((j >= m) && (list[j] < key))
                 j--;
-            if( i < j){
-	            swap(&list[i],&list[j]);
+            if(list[i]!=-1.0 && i < j){
+              swap(&list[i],&list[j]);
 	            swap(&r_index_node[i],&r_index_node[j]);
-
             }
-                
         }
+        printf("key=%f\n", key);
         /* swap two elements */
         swap(&list[m],&list[j]);
         swap(&r_index_node[m],&r_index_node[j]);
- 
         /* recursively sort the lesser list */
         quicksort(list, r_index_node,m,j-1);
         quicksort(list, r_index_node,j+1,n);
@@ -288,29 +306,28 @@ void quicksort(int* list, int *r_index_node, int m,int n)
 }
 
 // exo 3
-int * MKSCORE(char * ENTREE, int nb_iterations, int max_node, float * r){
-  int t=0;
-  int i=0,j=0;
-  // int *r = (int*)malloc(sizeof(int)*(max_node+1));
+void MKSCORE(char * in_put, int nb_iterations, int max_node, float * r, int * r_index_node){
+  int t=0, i=0, j=0;
 
   FILE * f_in;
   char line[SIZE_OF_LINE];
-  if ((f_in = fopen(ENTREE, "r")) == NULL) {
-    fprintf(stderr, "\nErreur: Impossible de lire le fichier %s\n", ENTREE);
+  if ((f_in = fopen(in_put, "r")) == NULL) {
+    fprintf(stderr, "\nErreur: Impossible de lire le fichier %s\n", in_put);
     return 0;
   }
 
-  for(i=0; i<=max_node; i++){
-    r[i] = 0.0;
-    r[j] = 0.0;
-  }
-  
   for(t=0; t<nb_iterations; t++){
-    // 
     fseek(f_in, 0, SEEK_SET);
     while (fgets(line, SIZE_OF_LINE, f_in) != NULL) {
       IGNORE_COMMENTS;
       sscanf(line, "%d %d", & i, & j);
+      r_index_node[i] = i;
+      r_index_node[j] = j;
+      if(r[i] == -1.0)
+        r[i] = 0.0;
+      if(r[j] == -1.0)
+        r[j] = 0.0;
+
       if(r[i] <= r[j]){
         r[i] = r[i]+1.0;
       }else{
@@ -320,10 +337,10 @@ int * MKSCORE(char * ENTREE, int nb_iterations, int max_node, float * r){
   }
 
   for(i=0; i<max_node; i++){
+    if(r[i]==-1.0)
+      continue;
     r[i]= (float)r[i]/((float)t);
   }
-  
-  return r;
 }
 
 void exo1(char * in_put, int nb_nodes, int max_node){
@@ -338,7 +355,7 @@ void exo1(char * in_put, int nb_nodes, int max_node){
   printf("max_node=%d\n",max_node);
 
   tas* heap = create_heap(in_put,index_tab, nb_nodes);
-  k_core(heap, index_tab, N); // on free la heap dnas k_nore
+  k_core_decomposition(heap, index_tab, N); // on free la heap dnas k_nore
 
   free(index_tab);
 
@@ -346,32 +363,37 @@ void exo1(char * in_put, int nb_nodes, int max_node){
   free(N);
 }
 
+void exo3(char * in_put, int max_node){
+  float * r = (float*)malloc(sizeof(float)*(max_node+1));
+  int * r_index_node = (int*)malloc(sizeof(int)*(max_node+1));
+  int j =0;
+
+  for(j=0; j<=max_node; j++){
+    r_index_node[j] = -1;
+    r[j] = -1.0;
+  }
+
+  MKSCORE(in_put, NB_ITERATIONS, max_node, r, r_index_node);
+  quicksort(r, r_index_node,0,max_node);
+
+  average_degree_density(in_put, r_index_node, max_node);
+
+  free(r);
+  free(r_index_node);
+}
+
 int main(int argc, char *argv[]) {
   double temps;
   int nb_nodes = 0, max_node=0;
   char * in_put = argv[1];
-	int j =0;
-  
+
   nb_nodes = nbEdgesAndNodes(in_put, &max_node);
   nb_nodes ++; // je sais pas pk mais quand je l'enlever ça fait malloc(): memory corruption
 
   clock_t start = clock();
-  // exo1(in_put, nb_nodes, max_node);
+  exo1(in_put, nb_nodes, max_node);
 
-  // exo3
-  float * r = (float*)malloc(sizeof(float)*(max_node+1));
-  int * r_index_node = (int*)malloc(sizeof(int)*(max_node+1));
-  MKSCORE(argv[1], NB_ITERATIONS, max_node, r);
-  for(j=0; j<=max_node; j++){
-		r_index_node[j] = j;
-  }
-  
-  quicksort(r, r_index_node,0,max_node);        
-	
-	/*for(j=0; j<=max_node; j++){
-  	printf("r_index_node[%d]=%d\n", j,r_index_node[j]);
-  }*/
-  average_degree_density(in_put, r_index_node, max_node);
+  // exo3(in_put, max_node);
 
   temps = (double)(clock()-start)/(double)CLOCKS_PER_SEC;
   printf("\nRun terminée en %.10f seconde(s)!\n", temps);

@@ -8,8 +8,8 @@ key* parse_key(int node, int degree) {
   res->node = node;
   res->degree = degree;
   res->core = -1;
-  res->voisins = (int*)calloc(degree, sizeof(int));
-  res->nb_voisins = 0;
+  res->neighbors = (int*)calloc(degree, sizeof(int));
+  res->nb_neighbors = 0;
   return res;
 }
 
