@@ -14,7 +14,7 @@
 /* Please set here the value of the highest number
  * representing a node in the graph
  */
-#define NUMBER_OF_NODES 100000000
+#define NUMBER_OF_NODES 200000000
 
 /* Exercice 2
  * path : path to file
@@ -386,6 +386,12 @@ void BFS(adjarray* adj){
 */
 }
 
+
+
+int cmpfunc (const void * a, const void * b) {
+   return ( *(unsigned*)a - *(unsigned*)b );
+}
+
 /* Exercice 9
  * g : Adjacency Array representing the graph and build with function from Exercice 7
  */
@@ -402,18 +408,9 @@ void numberOfTriangle(adjarray* g){
   unsigned min = INT_MAX;
   int indice = 0;
   for(unsigned i=0; i < g->n; i++){
-      sizeU = g->cd[i+1]-g->cd[i];
-      // O(n2) sort
-      for(unsigned j = g->cd[i]; j < g->cd[i+1]; j++){
-        min=INT_MAX;
-        for(unsigned h = j; h < g->cd[i+1]; h++){
-          if(g->adj[h] < min){
-            min = g->adj[h];
-            indice=h;
-          }
-        }
-        swap(g->adj+j, g->adj+indice);
-      }
+    sizeU = g->cd[i+1]-g->cd[i];
+    // qsort
+     qsort(g->adj+g->cd[i], sizeU, sizeof(unsigned), cmpfunc);
   }
 
   // begin running timer
