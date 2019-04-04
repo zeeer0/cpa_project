@@ -208,20 +208,27 @@ int* k_core_decomposition(tas* heap, int * index_tab, int* N){
 }
 
 /**
-* For each graph, calculate
+* For each subgraph, calculate
 *   (i)the average degree density,
 *   (ii) the edge density and
 *   (iii) the size of a densest core ordering prefix1
+*   and print the max for each of them
 *
 * in_put : path of file inPut
+* N :
 * nb_node : the number of nodes in the file
 *
 **/
 
 void average_degree_density(char * in_put, int *N, int nb_nodes){
-  int u=0;
+  float tmp_max=0.0;
+  float max_density = 0.0;
+  float index_max_density = 0.0;
+  int val_max_density=0;
+
   int *degree_density = (int*)malloc(sizeof(int)*(nb_nodes));
 
+  int u=0;
   for(u=0; u<=nb_nodes; u++){
     degree_density[u] = 0;
     degree_density[N[u]] = 0;
@@ -239,21 +246,16 @@ void average_degree_density(char * in_put, int *N, int nb_nodes){
   while (fgets(line, SIZE_OF_LINE, f_in) != NULL) {
     IGNORE_COMMENTS;
     sscanf(line, "%d %d", & i, & j);
+    // compare the order of removal in the heap for i and j
     if(N[i]>N[j]){
       degree_density[N[i]]++;
     }else{
       degree_density[N[j]]++;
     }
   }
+
   for(u=1; u<nb_nodes;u++){
     degree_density[u] = degree_density[u] + degree_density[u-1];
-  }
-
-  float max_density = 0.0, tmp_max=0.0;
-  float index_max_density = 0.0;
-  int val_max_density=0;
-
-  for(u=1; u<nb_nodes;u++){
     tmp_max = (degree_density[u]/(float)u);
     if(max_density<tmp_max){
       index_max_density = (2*degree_density[u])/(float)(u*(u-1));
@@ -264,6 +266,12 @@ void average_degree_density(char * in_put, int *N, int nb_nodes){
   printf("Average degree densit=%f\nEdge density=%f\nSize of a densest core ordering prefix=%d\n", max_density, index_max_density, val_max_density);
 }
 
+/**
+* Swap between two pointers
+*
+* x : val1
+* y : val2
+**/
 void swap(int *x,int *y){
     int temp;
     temp = *x;
@@ -272,7 +280,16 @@ void swap(int *x,int *y){
 }
 
 
-void quicksort(float* list, int *r_index_node, int m,int n){
+/**
+* Sort a list in descending order and
+*   save the order of the nodes after sorting it
+*
+* list : pointer list of value to sort
+* r_index_node : pointer to the order of each node in the list
+* m : O (first index of the list)
+* n : size of list
+**/
+void quicksort(int* list, int *r_index_node, int m,int n){
     float key;
     int i,j,k;
     if( m < n){
@@ -295,17 +312,24 @@ void quicksort(float* list, int *r_index_node, int m,int n){
 	            swap(&r_index_node[i],&r_index_node[j]);
             }
         }
-        printf("key=%f\n", key);
-        /* swap two elements */
+        // swap two elements
         swap(&list[m],&list[j]);
         swap(&r_index_node[m],&r_index_node[j]);
-        /* recursively sort the lesser list */
+        // recursively sort the lesser list
         quicksort(list, r_index_node,m,j-1);
         quicksort(list, r_index_node,j+1,n);
     }
 }
 
-// exo 3
+/**
+* Compute density score
+*
+* in_put : path of file inPut
+* nb_iterations : number of iterations
+* max_node : the max number of the nodes
+* r :
+* r_index_node :
+**/
 void MKSCORE(char * in_put, int nb_iterations, int max_node, float * r, int * r_index_node){
   int t=0, i=0, j=0;
 
@@ -343,39 +367,62 @@ void MKSCORE(char * in_put, int nb_iterations, int max_node, float * r, int * r_
   }
 }
 
+/**
+* Launch of the first exercise
+*
+* in_put : path of file inPut
+* nb_node : the number of nodes in the file
+* max_node : the max number of the nodes
+**/
 void exo1(char * in_put, int nb_nodes, int max_node){
-  int i = 0;
-  int *index_tab = (int*)malloc(sizeof(int)*(max_node+1));
-  int *N = (int*)malloc(sizeof(int)*(max_node+1));
+  int i = 0; // variable to be used in the for
+  int *index_tab = (int*)malloc(sizeof(int)*(max_node+1)); // index_tab : the index for each node in the heap
+  int *N = (int*)malloc(sizeof(int)*(max_node+1)); // ist to save the delete order for each node in a heap
 
+  // initialization of both lists index_tab and N to -1
   for(i = 0; i < (max_node+1); i++){
     index_tab[i] = -1;
     N[i] = -1;
   }
-  printf("max_node=%d\n",max_node);
 
+  // creating the heap data structure
   tas* heap = create_heap(in_put,index_tab, nb_nodes);
-  k_core_decomposition(heap, index_tab, N); // on free la heap dnas k_nore
+
+  // compute the k-core decomposition
+  k_core_decomposition(heap, index_tab, N); // we destroy the heap in the function
 
   free(index_tab);
 
+  // compute the average degree density, the edge density
+  // and the size of a densest core ordering prefix
   average_degree_density(in_put, N, nb_nodes);
   free(N);
 }
 
+/**
+* Launch of the third exercise
+*
+* in_put : path of file inPut
+* max_node : the max number of the nodes
+**/
 void exo3(char * in_put, int max_node){
+  int j=0;  // variable to be used in the for
   float * r = (float*)malloc(sizeof(float)*(max_node+1));
   int * r_index_node = (int*)malloc(sizeof(int)*(max_node+1));
-  int j =0;
 
+  // initialization of both lists r_index_node and r to -1
   for(j=0; j<=max_node; j++){
     r_index_node[j] = -1;
     r[j] = -1.0;
   }
 
   MKSCORE(in_put, NB_ITERATIONS, max_node, r, r_index_node);
+
+  // sort r
   quicksort(r, r_index_node,0,max_node);
 
+  // compute the average degree density, the edge density
+  // and the size of a densest core ordering prefix
   average_degree_density(in_put, r_index_node, max_node);
 
   free(r);
