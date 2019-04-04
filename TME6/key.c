@@ -3,7 +3,6 @@
 #include "key.h"
 
 
-//fonctionne, ne pas toucher
 key* parse_key(int node, int degree) {
   key* res = (key*) malloc(sizeof(key));
   res->node = node;

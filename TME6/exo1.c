@@ -22,6 +22,7 @@
 #define SIZE 4
 #define INFINITY_FLOAT 1.1
 #define INFINITY_INT 1
+#define NB_ITERATIONS 2
 
 #define NB_ITERATIONS 2
 
@@ -240,16 +241,45 @@ int average_degree_density(char * ENTREE, int *N, int nb_nodes){
 }
 
 
-int main(int argc, char *argv[]) {
-  double temps;
-  clock_t start = clock();
+// exo 3
+int * MKSCORE(char * ENTREE, int nb_iterations, int max_node){
+  int t=0;
+  int i=0,j=0;
+  int *r = (int*)malloc(sizeof(int)*(max_node+1));
 
-  int i=0, nb_nodes = 0, max_node=0;
+  FILE * f_in;
+  char line[SIZE_OF_LINE];
+  if ((f_in = fopen(ENTREE, "r")) == NULL) {
+    fprintf(stderr, "\nErreur: Impossible de lire le fichier %s\n", ENTREE);
+    return 0;
+  }
 
-  nb_nodes = nbEdgesAndNodes(argv[1], &max_node);
-  nb_nodes ++; // je sais pas pk mais quand je l'enlever ça fait malloc(): memory corruption
-  // max_node ++;
+  for(i=0; i<max_node; i++){
+    r[i] = 0;
+    r[j] = 0;
+  }
 
+  for(t=0; t<nb_iterations; t++){
+    // a changer !!!
+    fseek(f_in, 0, SEEK_SET);
+    while (fgets(line, SIZE_OF_LINE, f_in) != NULL) {
+      IGNORE_COMMENTS;
+      sscanf(line, "%d %d", & i, & j);
+      if(r[i] <= r[j]){
+        r[i]++;
+      }else{
+        r[j]++;
+      }
+    }
+  }
+  for(i=0; i<max_node; i++){
+    r[i] /=t;
+  }
+  return r;
+}
+
+void exo1(char * in_put, int nb_nodes, int max_node){
+  int i = 0;
   int *index_tab = (int*)malloc(sizeof(int)*(max_node+1));
   int *N = (int*)malloc(sizeof(int)*(max_node+1));
 
@@ -259,12 +289,28 @@ int main(int argc, char *argv[]) {
   }
   printf("max_node=%d\n",max_node);
 
-  tas* heap = create_heap(argv[1],index_tab, nb_nodes);
-  k_core(heap, index_tab, N);
+  tas* heap = create_heap(in_put,index_tab, nb_nodes);
+  k_core(heap, index_tab, N); // on free la heap dnas k_nore
 
   free(index_tab);
 
-  average_degree_density(argv[1], N, nb_nodes);
+  average_degree_density(in_put, N, nb_nodes);
+  free(N);
+}
+
+int main(int argc, char *argv[]) {
+  double temps;
+  int nb_nodes = 0, max_node=0;
+  char * in_put = argv[1];
+
+  nb_nodes = nbEdgesAndNodes(in_put, &max_node);
+  nb_nodes ++; // je sais pas pk mais quand je l'enlever ça fait malloc(): memory corruption
+
+  clock_t start = clock();
+  exo1(in_put, nb_nodes, max_node);
+
+  // exo3
+  // MKSCORE(argv[1], NB_ITERATIONS, max_node);
 
   temps = (double)(clock()-start)/(double)CLOCKS_PER_SEC;
   printf("\nRun terminée en %.10f seconde(s)!\n", temps);

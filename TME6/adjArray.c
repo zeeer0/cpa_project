@@ -37,30 +37,30 @@ adjarray* readAndStoreInAdjArray(char* src){
     exit(1);
   }
 
-    // jump commentaries
-    char* line = (char*) malloc(sizeof(char)*1024);
-    size_t len=0, nread=0;
-    while((nread=getline(&line, &len, stream)) > 0){
-     if(line[0]!='#' && line[0]!='\n'){
-        fseek(stream, -nread, SEEK_CUR);
-        break;
-      }
+  // jump commentaries
+  char* line = (char*) malloc(sizeof(char)*1024);
+  size_t len=0, nread=0;
+  while((nread=getline(&line, &len, stream)) > 0){
+   if(line[0]!='#' && line[0]!='\n'){
+      fseek(stream, -nread, SEEK_CUR);
+      break;
     }
-    free(line);
+  }
+  free(line);
 
-    // rename
-    while(fscanf(stream, "%d\t%d", &nb1, &nb2) > 0){
-      int array[2] = { nb1, nb2 };
-      for(int i=0; i<2 ; i++){
-        if(rename[array[i]]==-1){
-          rename[array[i]]=nb;
-          nb++;
-          adjArray->n++;
-        }
-        degrees[rename[array[i]]] = (degrees[rename[array[i]]]==-1) ? 1 : degrees[rename[array[i]]]+1;
+  // rename
+  while(fscanf(stream, "%d\t%d", &nb1, &nb2) > 0){
+    int array[2] = { nb1, nb2 };
+    for(int i=0; i<2 ; i++){
+      if(rename[array[i]]==-1){
+        rename[array[i]]=nb;
+        nb++;
+        adjArray->n++;
       }
-      adjArray->m++;
+      degrees[rename[array[i]]] = (degrees[rename[array[i]]]==-1) ? 1 : degrees[rename[array[i]]]+1;
     }
+    adjArray->m++;
+  }
 
   fclose(stream);
 
@@ -71,18 +71,18 @@ adjarray* readAndStoreInAdjArray(char* src){
     adjArray->cd[i+1]=adjArray->cd[i]+degrees[i];
   }
 
-//adj
-long long unsigned max = 0;
-for(int i =0 ; i < NUMBER_OF_NODES; i++)
-  if(degrees[i]!=-1)
-    max+=degrees[i];
+  //adj
+  long long unsigned max = 0;
+  for(int i =0 ; i < NUMBER_OF_NODES; i++)
+    if(degrees[i]!=-1)
+      max+=degrees[i];
 
-adjArray->adj = (unsigned*) malloc(sizeof(unsigned)*max);
-int isPlain[max];
-for(long long unsigned i =0 ; i < max; i++){
-  adjArray->adj[i] = 0;
-  isPlain[i]=0;
-}
+  adjArray->adj = (unsigned*) malloc(sizeof(unsigned)*max);
+  int isPlain[max];
+  for(long long unsigned i =0 ; i < max; i++){
+    adjArray->adj[i] = 0;
+    isPlain[i]=0;
+  }
 
   nb1=0; nb2=0;
   stream = fopen(src, "r");
@@ -121,7 +121,7 @@ for(long long unsigned i =0 ; i < max; i++){
     }
 
   fclose(stream);
-free(rename);
+  free(rename);
   free(degrees);
   printf("Exercice 7 : sucessfully stored the graph in Adjacency Array structure. \n");
   return adjArray;

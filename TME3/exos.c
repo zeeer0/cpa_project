@@ -20,53 +20,53 @@
  * path : path to file
  */
 int** nbEdgesAndNodes(char* path, int display){
- // to count number of nodes
- int* tab = (int*) malloc(sizeof(int)* NUMBER_OF_NODES);
- for(int i =0; i< NUMBER_OF_NODES;i++)
-  tab[i]=0;
+   // to count number of nodes
+   int* tab = (int*) malloc(sizeof(int)* NUMBER_OF_NODES);
+   for(int i =0; i< NUMBER_OF_NODES;i++)
+    tab[i]=0;
 
-int** numbers = (int**) malloc(sizeof(int*)*2);
-int* nbNodes = (int*) malloc(sizeof(int));
-int* nbEdges = (int*) malloc(sizeof(int));
-numbers[0]=nbNodes; numbers[1] = nbEdges;
-*nbNodes = 0;
-*nbEdges = 0;
-long long unsigned nb1=0, nb2=0;
-FILE* stream = fopen(path, "r");
-if(stream==NULL){
-  printf("No such file\n");
-  exit(1);
-}
-
-// jump commentaries
-char* line = (char*) malloc(sizeof(char)*1024);
-size_t len=0, nread=0;
-while((nread=getline(&line, &len, stream)) > 0){
- if(line[0]!='#' && line[0]!='\n'){
-    fseek(stream, -nread, SEEK_CUR);
-    break;
+  int** numbers = (int**) malloc(sizeof(int*)*2);
+  int* nbNodes = (int*) malloc(sizeof(int));
+  int* nbEdges = (int*) malloc(sizeof(int));
+  numbers[0]=nbNodes; numbers[1] = nbEdges;
+  *nbNodes = 0;
+  *nbEdges = 0;
+  long long unsigned nb1=0, nb2=0;
+  FILE* stream = fopen(path, "r");
+  if(stream==NULL){
+    printf("No such file\n");
+    exit(1);
   }
-}
-free(line);
 
-// count
-while(fscanf(stream, "%llu\t%llu", &nb1, &nb2) > 0){
-  long long unsigned array[2] = { nb1, nb2 };
-  for(int i =0; i<2; i++){
-    if(tab[array[i]]==0){
-     tab[array[i]]=1;
-     (*nbNodes)++;
-     }
+  // jump commentaries
+  char* line = (char*) malloc(sizeof(char)*1024);
+  size_t len=0, nread=0;
+  while((nread=getline(&line, &len, stream)) > 0){
+   if(line[0]!='#' && line[0]!='\n'){
+      fseek(stream, -nread, SEEK_CUR);
+      break;
+    }
   }
-  (*nbEdges)++;
-}
+  free(line);
 
-fclose(stream);
-free(tab);
-if(display){
- printf("Exercice 2 :\nFile name : %s\nNumber of nodes : %d\nNumber of edges : %d\n", path, *nbNodes, *nbEdges);
-}
- return numbers;
+  // count
+  while(fscanf(stream, "%llu\t%llu", &nb1, &nb2) > 0){
+    long long unsigned array[2] = { nb1, nb2 };
+    for(int i =0; i<2; i++){
+      if(tab[array[i]]==0){
+       tab[array[i]]=1;
+       (*nbNodes)++;
+       }
+    }
+    (*nbEdges)++;
+  }
+
+  fclose(stream);
+  free(tab);
+  if(display){
+   printf("Exercice 2 :\nFile name : %s\nNumber of nodes : %d\nNumber of edges : %d\n", path, *nbNodes, *nbEdges);
+  }
+   return numbers;
 }
 
 /* Exercice 3
@@ -164,35 +164,35 @@ void specialQuantity(int* degrees, char* src){
 */
 
 void degreeDistribution(int* degrees){
-printf("Exercice 6 :\nBuilding degreeDistribution.txt...\n");
-// get max degree
-int max = 0;
-for(int i=0; i < NUMBER_OF_NODES; i++){
-  if(degrees[i] > max)
-    max = degrees[i];
-}
+  printf("Exercice 6 :\nBuilding degreeDistribution.txt...\n");
+  // get max degree
+  int max = 0;
+  for(int i=0; i < NUMBER_OF_NODES; i++){
+    if(degrees[i] > max)
+      max = degrees[i];
+  }
 
-// degree distributions tab
-int* degreeDistribution = (int*) malloc(sizeof(int)* (max+1));
-for(int i =0; i < max+1; i++)
-  degreeDistribution[i] = 0;
+  // degree distributions tab
+  int* degreeDistribution = (int*) malloc(sizeof(int)* (max+1));
+  for(int i =0; i < max+1; i++)
+    degreeDistribution[i] = 0;
 
-// calculate distribution
-for(int i=0; i < NUMBER_OF_NODES; i++){
-  if(degrees[i]!=-1)
-    degreeDistribution[degrees[i]]++;
-}
+  // calculate distribution
+  for(int i=0; i < NUMBER_OF_NODES; i++){
+    if(degrees[i]!=-1)
+      degreeDistribution[degrees[i]]++;
+  }
 
- //write distrubutions to a file
- FILE* stream = fopen("degreeDistribution.txt", "w+");
+   //write distrubutions to a file
+   FILE* stream = fopen("degreeDistribution.txt", "w+");
 
- for(int i =0; i < max+1; i++){
-   if(degreeDistribution[i]!=0)
-     fprintf(stream, "%d %d\n", i, degreeDistribution[i]);
- }
+   for(int i =0; i < max+1; i++){
+     if(degreeDistribution[i]!=0)
+       fprintf(stream, "%d %d\n", i, degreeDistribution[i]);
+   }
 
-free(degreeDistribution);
-fclose(stream);
+  free(degreeDistribution);
+  fclose(stream);
 }
 
 /* Exercice 7
@@ -206,9 +206,9 @@ edgeList* readAndStoreInListEdge(char* src){
    exit(1);
  }
 
-// init edgeList
-edgeList* list = (edgeList*) malloc(sizeof(edgeList));
-edgeList* pointer = list;
+ // init edgeList
+ edgeList* list = (edgeList*) malloc(sizeof(edgeList));
+ edgeList* pointer = list;
 
  // count
  while(fscanf(stream, "%d\t%d", &nb1, &nb2) > 0){
