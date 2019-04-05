@@ -309,6 +309,8 @@ void quicksort(int* list, int *r_index_node, int m,int n){
       key = list[m];
       i = m+1;
       j = n;
+      printf(">>>>>>> j=%d \n", j);
+      printf("list[%d]=%f \t list[%d]=%f\n",m, list[m], j, list[j]);
       while(i <= j){
           while((i <= n) && (list[i] >= key))
               i++;
@@ -446,9 +448,9 @@ int main(int argc, char *argv[]) {
   nb_nodes ++; // je sais pas pk mais quand je l'enleve ça fait malloc(): memory corruption
 
   clock_t start = clock();
-  exo1(in_put,out_put, nb_nodes, max_node);
+  // exo1(in_put,out_put, nb_nodes, max_node);
 
-  // exo3(in_put, max_node-1);
+  exo3(in_put, max_node-1);
 
   temps = (double)(clock()-start)/(double)CLOCKS_PER_SEC;
   printf("\nRun terminée en %.10f seconde(s)!\n", temps);

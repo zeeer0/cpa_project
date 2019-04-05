@@ -390,30 +390,35 @@ void BFS(adjarray* adj, int s){
       fifo[i] = -1;
   }
 
-  i=0;
-  int curr_idx = i+1;
-  int u = 0;
-  int j = 0;
-  int v = 0;
-  fifo[0] = s;
+  i=0;// utilisable dans for 1
+  int curr_idx = i+1; // pour garder un pointer sur la fifo (qui va correspondre a la size max)
+  int j = 0; // utilisable dans for 2
+  int u = 0; // récupération de l'élélement en tête de la fifo
+  int v = 0; // récupération du voisin j de u
   int * voisins;
+
+  // add the first node
+  fifo[0] = s;
+  mark[u] = 0
+
+  // tq la fifo n'est pas vide
   for(i=0; i<curr_idx; i++){
+    // récupérer l'élément en tete de la fifo
     u = fifo[i]; // pop
+    // récupérer la liste de voisins pour chaque noeud ( pas besoin si c'est le truc opti)
     voisins = g->adj[u];
 
-    // mark[i] = u; // ajout de l'élément en tete de la fifo
-
-    for(j=0;;){
+    // pour chaque voisins de u dans g ( si c'est le truc opti du prof alors on commence avec j = cd[u])
+    for(j=g->cd[u];j<g->cd[u+1];j++){
       v = g->adj[j];
         if(mark[v] == -1){
-          fifo[curr_idx] = v; // add node v to fifo
+          fifo[curr_idx] = v; // add node v to fifo in (i+1)index
           mark[v] = mark[u] + 1;
           l++;
         }
     }
   }
   return mark;
-
 }
 
 /* Exercice 9
