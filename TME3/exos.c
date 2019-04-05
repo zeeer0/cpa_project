@@ -377,13 +377,43 @@ for(long long unsigned i =0 ; i < max; i++){
 /* Exercice 8
  * ...
  */
-void BFS(adjarray* adj){
-/*
-  fifo = createFifo();
-  fifo.add(s);
-  Mark(s);
-  while fifo
-*/
+
+void BFS(adjarray* adj, int s){
+  int * fifo;
+  int *mark;
+  int n = g->n, i=0;
+  fifo = (int*)malloc(n*sizeof(int));
+  mark = (int*)malloc(n*sizeof(int));
+
+  for(i=0; i<n; i++){
+      mark[i] = -1;
+      fifo[i] = -1;
+  }
+
+  i=0;
+  int curr_idx = i+1;
+  int u = 0;
+  int j = 0;
+  int v = 0;
+  fifo[0] = s;
+  int * voisins;
+  for(i=0; i<curr_idx; i++){
+    u = fifo[i]; // pop
+    voisins = g->adj[u];
+
+    // mark[i] = u; // ajout de l'élément en tete de la fifo
+
+    for(j=0;;){
+      v = g->adj[j];
+        if(mark[v] == -1){
+          fifo[curr_idx] = v; // add node v to fifo
+          mark[v] = mark[u] + 1;
+          l++;
+        }
+    }
+  }
+  return mark;
+
 }
 
 /* Exercice 9
