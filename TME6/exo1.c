@@ -86,7 +86,7 @@ int nbEdgesAndNodes(char* in_put, int * max_node){
   }
  }
 
- // printf("File name : %s\nNumber of nodes : %llu\nNumber of edges : %llu\n", in_put, nbNode, nbEdge);
+ printf("File name : %s\nNumber of nodes : %llu\nNumber of edges : %llu\n", in_put, nbNode, nbEdge);
 
  free(buffer);
  map_deinit(&hash);
@@ -164,28 +164,34 @@ tas* create_heap(char * in_put, int*index_tab, int nb_nodes) {
   // building the heap structure
   heap = consiter(heap->a, heap->size, index_tab);
 
+
   return heap;
 }
 
 /**
 * The order of removal of each node from the heap
 *
+* out_put :
 * heap : heap
 * index_tab : the index for each node in the heap
 * N : list to save the delete order of each node from the heap
 *
 * return : a node list with their delete order in the heap
 **/
-int* k_core_decomposition(tas* heap, int * index_tab, int* N){
+int* k_core_decomposition(char* out_put, tas* heap, int * index_tab, int* N){
   int i = heap->size; // the current size of the heap
   int c = 0; // core
   unsigned int j = 0; // the current index
   key * v ; //  key in heap (the item that will be deleted in the heap)
 
+  FILE * f_out;
+  f_out = fopen (out_put,"w");
+
   while(!empty(heap)){
     v = heap->a[0];
     c = MAX(c,v->degree);
     v->core = c;
+    // fprintf (f_out, "%d \t %d\n", v->core, v->degree);
     for(j=0; j<v->nb_neighbors;j++){ /*decrement the degree for each neighbor of v */
       if(index_tab[v->neighbors[j]]==-1){ /*the neighbor at the index j does not exist*/
         continue;
@@ -372,10 +378,11 @@ int MKSCORE(char * in_put, int nb_iterations, int max_node, float * r, int * r_i
 * Launch of the first exercise
 *
 * in_put : path of file inPut
+* out_put : path of file outPut
 * nb_node : the number of nodes in the file
 * max_node : the max number of the nodes
 **/
-void exo1(char * in_put, int nb_nodes, int max_node){
+void exo1(char * in_put, char* out_put, int nb_nodes, int max_node){
   int i = 0; // variable to be used in the for
   int *index_tab = (int*)malloc(sizeof(int)*(max_node+1)); // index_tab : the index for each node in the heap
   int *N = (int*)malloc(sizeof(int)*(max_node+1)); // ist to save the delete order for each node in a heap
@@ -390,7 +397,7 @@ void exo1(char * in_put, int nb_nodes, int max_node){
   tas* heap = create_heap(in_put,index_tab, nb_nodes);
 
   // compute the k-core decomposition
-  k_core_decomposition(heap, index_tab, N); // we destroy the heap in the function
+  k_core_decomposition(out_put, heap, index_tab, N); // we destroy the heap in the function
 
   free(index_tab);
 
@@ -433,14 +440,15 @@ int main(int argc, char *argv[]) {
   double temps;
   int nb_nodes = 0, max_node=0;
   char * in_put = argv[1];
+  char * out_put = "out_put/google_scholar.txt";
 
   nb_nodes = nbEdgesAndNodes(in_put, &max_node);
   nb_nodes ++; // je sais pas pk mais quand je l'enleve ça fait malloc(): memory corruption
 
   clock_t start = clock();
-  //exo1(in_put, nb_nodes, max_node);
+  exo1(in_put,out_put, nb_nodes, max_node);
 
-  exo3(in_put, max_node-1);
+  // exo3(in_put, max_node-1);
 
   temps = (double)(clock()-start)/(double)CLOCKS_PER_SEC;
   printf("\nRun terminée en %.10f seconde(s)!\n", temps);
