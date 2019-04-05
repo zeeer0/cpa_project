@@ -128,32 +128,24 @@ tas* create_heap(char * in_put, int*index_tab, int nb_nodes) {
     int array[2] = { i, j};
     int h =0;
     for(h=0; h< 2; h++){
-      if(index_tab[array[h]]==-1){ /*the node i does not exist in the heap*/
-        // add the node in heap
+      if(index_tab[array[h]]==-1){ /*the node i (or j) does not exist in the heap*/
+        // add the node in heap and in index_tab to save the node location in the index table
         ajout(heap, parse_key(array[h], 1), index_tab);
-        // save the node location in the index table
-        index_tab[array[h]]=index_node;
         // increment the index for nodes
   			index_node++;
-        // add node j as neighbors of node i
-        if(h == 0){
-          heap->a[index_tab[array[h]]]->neighbors[heap->a[index_tab[array[h]]]->degree -1] = array[h+1];
-        }else{
-          heap->a[index_tab[array[h]]]->neighbors[heap->a[index_tab[array[h]]]->degree -1] = array[h-1];
-        }
-        heap->a[index_tab[array[h]]]->nb_neighbors =1;
-  		}else{ /*the node i exist in the heap*/
-          // increment the degree of i
+  		}else{ /*the node i (or j) exist in the heap*/
+          // increment the degree of i (or j)
           heap->a[index_tab[array[h]]]->degree ++;
-          // reallocate the list of neighbors and add node j as neighbors of i
+          // reallocate the list of neighbors and add node j (or i) as neighbors of i (or j)
           heap->a[index_tab[array[h]]]->neighbors = realloc(heap->a[index_tab[array[h]]]->neighbors, heap->a[index_tab[array[h]]]->degree*sizeof(int));
-          if(h == 0)
-            heap->a[index_tab[array[h]]]->neighbors[heap->a[index_tab[array[h]]]->degree -1] = array[h+1];
-          else
-            heap->a[index_tab[array[h]]]->neighbors[heap->a[index_tab[array[h]]]->degree -1] = array[h-1];
-
-          heap->a[index_tab[array[h]]]->nb_neighbors ++;
   		}
+      // add node j (or i) as neighbors of node i (or j)
+      if(h == 0)
+        heap->a[index_tab[array[h]]]->neighbors[heap->a[index_tab[array[h]]]->degree -1] = array[h+1];
+      else
+        heap->a[index_tab[array[h]]]->neighbors[heap->a[index_tab[array[h]]]->degree -1] = array[h-1];
+
+      heap->a[index_tab[array[h]]]->nb_neighbors ++;
     }
   }
   // building the heap structure
@@ -194,6 +186,7 @@ int* k_core_decomposition(char* out_put, tas* heap, int * index_tab, int* N){
       heap->a[index_tab[v->neighbors[j]]]->degree --;
       // reorganization of the heap
       percoler(heap, index_tab[v->neighbors[j]], index_tab);
+
     }
     // delete the min
     delete_min(heap, index_tab);
@@ -411,7 +404,7 @@ void exo4(char * in_put, int max_node){
   }
 
   MKSCORE(in_put, NB_ITERATIONS, node_val, max_node);
-  node* max = (node*)malloc(sizeof(node));
+  node* max = NULL;
   for(j=0;j<=max_node; j++){
     max=node_val[j];
     for(h=j;h<=max_node; h++){
@@ -429,10 +422,10 @@ void exo4(char * in_put, int max_node){
   // and the size of a densest core ordering prefix
   average_degree_density_exo4(in_put, node_val, max_node);
 
-  /*for(j=0; j<=max_node; j++)
-    if(node_val[j]!=NULL)
+  for(j=0; j<=max_node; j++)
+    if(node_val[j]!=NULL && node_val[j]!=max)
       free(node_val[j]);
-  free(node_val);*/
+  free(node_val);
 }
 
 int main(int argc, char *argv[]) {
@@ -449,9 +442,9 @@ int main(int argc, char *argv[]) {
   printf("max_node=%d\n",(*max_node)+1);
 
   clock_t start = clock();
-  exo1(in_put,out_put, nb_nodes+1, (*max_node)+1);
+  // exo1(in_put,out_put, nb_nodes+1, (*max_node)+1);
 
-  // exo4(in_put, *max_node);
+  exo4(in_put, *max_node);
 
   temps = (double)(clock()-start)/(double)CLOCKS_PER_SEC;
   printf("\nRun terminée en %.10f seconde(s)!\n", temps);

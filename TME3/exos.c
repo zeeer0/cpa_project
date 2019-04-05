@@ -377,7 +377,7 @@ for(long long unsigned i =0 ; i < max; i++){
 /* Exercice 8
  * ...
  */
-
+/*
 void BFS(adjarray* adj, int s){
   int * fifo;
   int *mark;
@@ -419,7 +419,7 @@ void BFS(adjarray* adj, int s){
     }
   }
   return mark;
-}
+}*/
 
 /* Exercice 9
  * g : Adjacency Array representing the graph and build with function from Exercice 7
