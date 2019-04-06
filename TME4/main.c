@@ -6,51 +6,74 @@
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
-
-#define SIZE 400
-#define NUMBER_OF_NODES 1000000
+#include "utils.h"
 
 // exo 2
-void labelPropagation(char* path){
-  char* cleanDataFile = cleanData(path);
-  int** matrix = readAndStoreInAdjMatrix(cleanDataFile);
-  int** arr= nbEdgesAndNodes(cleanDataFile, 0);
-  unsigned nb = *(arr[0]);
-  int hasChanged = 1, r=0;
-
+void labelPropagation(int* labelOccurence, int* labels, int* nodes,int * communities, adjarray* a, int nbNodes, int* nbOfCommunities, int nbOfCommunitiesIndex){
+  int hasChanged = 1, highestLabelNb=0, highestLabelIndex = 0, tmp =0, tmpIndex=0, j=0;
 // 1. labels = 1 2 3 4 5 ... 400
-int* labels = (int*) malloc(sizeof(int)*nb);
-for(int i=0;i< nb; i++){
+for(int i=0; i < nbNodes; i++){
  labels[i]=i;
+ nodes[i]=i;
+ labelOccurence[i]=0;
+ communities[i]=0;
 }
 
 // while highest frenquency neighbords change
-while(hasChange){
+while(hasChanged){
    // 2. To shuffle an array a of n elements (indices 0..n-1):
-   int j=0; node_t* tmp;
-   for(int i=0; i < nb-1; i++){
-      while( (j = rand()) >= nb || i > j);
-      tmp=tab[i];
-      tab[i]=tab[j];
-      tab[j]=tmp;
+   for(int i=0; i < nbNodes-1; i++){
+      while( (j = rand()%nbNodes) < i );
+      tmp=nodes[i];
+      nodes[i]=nodes[j];
+      nodes[j]=tmp;
    }
 
   hasChanged = 0;
    // 3-4. test if it change
-   for(int i=0; i< nb i++){
-    if( (r = highestFrequencyNeighbors(labels, tab[i])) != labels[i] ){
-     labels[i] = r;
-     hasChanged=1;
+   for(int i=0; i< nbNodes; i++){
+     //3. highest label occuring among his neighbours
+     for(unsigned j = a->cd[nodes[i]]; j < a->cd[nodes[i]+1]; j++){
+       if( labelOccurence[labels[a->adj[j]]] !=0)
+          labelOccurence[labels[a->adj[j]]]=0;
+     }
+
+     highestLabelNb=0;
+     highestLabelIndex=0;
+     // calculate occurences
+     for(unsigned j = a->cd[nodes[i]]; j < a->cd[nodes[i]+1]; j++){
+       tmpIndex = labels[a->adj[j]];
+       tmp = labelOccurence[tmpIndex]+1;
+       if(tmp > highestLabelNb){
+         highestLabelNb=tmp;
+         highestLabelIndex = tmpIndex;
+       }
+       labelOccurence[tmpIndex]= tmp;
+     }
+
+     // is it different from his label
+    if( highestLabelIndex != labels[nodes[i]] ){
+     labels[nodes[i]] = highestLabelIndex;
+     hasChanged=1; // => go to step 2.
     }
   }
 }
-free(tab);
-free(labels);
-free(matrix);
-free(arr);
+
+for(int i=0; i < nbNodes;i++){
+  if(communities[labels[i]] < 1)
+    communities[labels[i]]+=1;
+}
+
+for(int i=0; i<nbNodes;i++){
+  if(communities[i] > 0){
+    nbOfCommunities[nbOfCommunitiesIndex]++;
+  }
+}
+
 }
 
 int main(int argc, char** args){
+  /*
   if(argc < 1){
     printf("usage : ./tme4.exe proba, with proba between 0.0 and 1.0\n");
     return 1;
@@ -61,7 +84,8 @@ int main(int argc, char** args){
     return 1;
   }
 
-  srand(time(NULL));
+
+
   float q;
   while((q=(rand()/(RAND_MAX*1.0)))>p);
   printf("p: %f, q : %f\n",p,q);
@@ -89,5 +113,69 @@ int main(int argc, char** args){
 
  close(fd);
  printf("%s created.\n",s);
+ */
+
+ // exo 2
+ if(argc < 1){
+   printf("usage : ./tme4.exe path/to/youtube.txt\n");
+   return 1;
+ }
+
+srand(time(NULL));
+
+char* cleanDataFile = cleanData(args[1]);
+
+int * rename = (int*) malloc(sizeof(int)* NUMBER_OF_NODES);
+for(int i=0;i<NUMBER_OF_NODES;i++){
+  rename[i]=-1;
+}
+
+FILE* stream = fopen(cleanDataFile, "r");
+int nb1, nb2, namer =0;
+while(fscanf(stream, "%d\t%d", &nb1, &nb2) > 0){
+    int array[2] = { nb1, nb2 };
+    for(int i=0; i< 2; i++){
+      if(rename[array[i]]==-1){ // pas de renommage
+        rename[array[i]]=namer;
+        namer++;
+       }
+   }
+
+}
+fclose(stream);
+
+int nbNodes = namer;
+printf("Number of nodes : %d\n", nbNodes);
+
+adjarray* a = readAndStoreInAdjArray(cleanDataFile);
+int* labelOccurence = (int*) malloc(sizeof(int)*nbNodes);
+int* labels = (int*) malloc(sizeof(int)*nbNodes);
+int* nodes = (int*) malloc(sizeof(int)*nbNodes);
+int * nbOfCommunities = (int*) malloc(sizeof(int)*1000);
+int* communities = (int*) malloc(sizeof(int)*nbNodes);
+
+for(int i=0; i < 1000; i++){
+  printf("labelPropagation x%d\n", i);
+  labelPropagation(labelOccurence, labels, nodes,communities, a, nbNodes, nbOfCommunities, i);
+}
+
+printf("Building communities1000x.txt...\n");
+stream = fopen("communities1000x.txt", "w+");
+
+for(int i=0; i < 1000;i++){
+    fprintf(stream, "%d %d\n", i, nbOfCommunities[i]);
+}
+
+fclose(stream);
+
+free(a->adj);
+free(a->cd);
+free(a);
+free(rename);
+free(nbOfCommunities);
+free(labelOccurence);
+free(labels);
+free(nodes);
+free(communities);
  return EXIT_SUCCESS;
 }
