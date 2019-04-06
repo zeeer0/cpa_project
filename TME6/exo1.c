@@ -3,18 +3,12 @@
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
-#include <limits.h>
-#include <fcntl.h>
-#include <time.h>
-#include <math.h>
 
-#include "map.h"
-#include "utils.h"
 #include "key.h"
 #include "heap_array.h"
 
 #define SIZE_OF_LINE 100
-#define NB_ITERATIONS 2
+#define NB_ITERATIONS 10
 
 /* Please set here the value of the highest number
  * representing a node in the graph
@@ -35,6 +29,14 @@ typedef struct {
     float value;
 } node;
 
+typedef struct NodDegree *NodDegree;
+struct NodDegree{
+  unsigned int ident;
+  unsigned int degree;
+  float score;
+  unsigned int *voisins;
+};
+
 /**
 * Function to count the number of nodes and edges in file
 *   and change the value of max_node
@@ -42,7 +44,7 @@ typedef struct {
 * in_put : path of file inPut
 * max_node : the max number of the nodes
 **/
-int** nbEdgesAndNodes(char* path, int display, int * max_node){
+int** nb_edges_nodes(char* path, int display, int * max_node){
    // to count number of nodes
    int* tab = (int*) malloc(sizeof(int)* NUMBER_OF_NODES);
    for(int i =0; i< NUMBER_OF_NODES;i++)
@@ -212,18 +214,14 @@ int* k_core_decomposition(char* out_put, tas* heap, int * index_tab, int* N){
 * nb_node : the number of nodes in the file
 *
 **/
-int average_degree_density(char * in_put, int *N, int nb_nodes){
-  float tmp_max=0.0;
-  float max_density = 0.0;
-  float index_max_density = 0.0;
-  int val_max_density=0;
-
+int calcul_density1(char * in_put, int *N, int nb_nodes){
+  int SizeDensestCore=0;
+  float tmp_max=0.0, AverageDegreeDensity = 0.0,EdgeDensity = 0.0;
   int *degree_density = (int*)malloc(sizeof(int)*(nb_nodes));
 
   int u=0;
   for(u=0; u<=nb_nodes; u++){
     degree_density[u] = 0;
-    // degree_density[N[u]] = 0;
   }
 
   FILE * f_in;
@@ -249,63 +247,221 @@ int average_degree_density(char * in_put, int *N, int nb_nodes){
   for(u=1; u<nb_nodes;u++){
     degree_density[u] = degree_density[u] + degree_density[u-1];
     tmp_max = ((float)degree_density[u])/((float)u);
-    if(max_density<tmp_max){
-      max_density = tmp_max;
-      index_max_density = (2.0*((float)degree_density[u]))/((float)(u*(u-1)));
-      val_max_density = u;
+    if(AverageDegreeDensity<tmp_max){
+      AverageDegreeDensity = tmp_max;
+      EdgeDensity = (2.0*((float)degree_density[u]))/((float)(u*(u-1)));
+      SizeDensestCore = u;
     }
   }
-  printf("Average degree densit=%f\nEdge density=%f\nSize of a densest core ordering prefix=%d\n", max_density, index_max_density, val_max_density);
+  printf("EXO1\nAverage degree densit=%f\nEdge density=%f\nSize of a densest core ordering prefix=%d\n", AverageDegreeDensity, EdgeDensity, SizeDensestCore);
   return 1;
 }
 
+/**
+* Launch of the first exercise
+*
+* in_put : path of file inPut
+* out_put : path of file outPut
+* nb_node : the number of nodes in the file
+* max_node : the max number of the nodes
+**/
+void exo1(char * in_put, char* out_put, int nb_nodes, int max_node){
+  int i = 0; // variable to be used in the for
+  int *index_tab = (int*)malloc(sizeof(int)*max_node); // index_tab : the index for each node in the heap
+  int *N = (int*)malloc(sizeof(int)*max_node); // list to save the delete order for each node in a heap
 
-int average_degree_density_exo4(char * in_put, node** node_val, int nb_nodes){
+  // initialization of both lists index_tab and N to -1
+  for(i = 0; i < max_node; i++){
+    index_tab[i] = -1;
+    N[i] = -1;
+  }
+
+  // creating the heap data structure
+  tas* heap = create_heap(in_put,index_tab, nb_nodes);
+  // compute the k-core decomposition
+  k_core_decomposition(out_put, heap, index_tab, N); // we destroy the heap in the function
+
+  free(index_tab);
+
+  // compute the average degree density, the edge density
+  // and the size of a densest core ordering prefix
+  calcul_density1(in_put, N, nb_nodes);
+  free(N);
+}
+
+// exo3
+NodDegree *create_adjacency_tab(FILE *f, unsigned int *rename_tab, unsigned int nb_nodes){
+
+  NodDegree *nodes = (NodDegree*)malloc(sizeof(NodDegree)*nb_nodes);
+  unsigned *nb_neighbors_added= (unsigned *)malloc(sizeof(unsigned)*nb_nodes);
+
+  unsigned i, j;
+  char line[SIZE_OF_LINE];
+
+  for(i=0; i < nb_nodes; i++){
+    nodes[i] = (NodDegree)malloc(sizeof(struct NodDegree));
+    nodes[i]->degree=0;
+    nodes[i]->ident = i;
+    nodes[i]->score = 0.0;
+    nb_neighbors_added[i] = 0;
+  }
+  fseek(f, 0, SEEK_SET);
+  while (fgets(line, SIZE_OF_LINE, f) != NULL) {
+    IGNORE_COMMENTS;
+    sscanf(line, "%u %u", & i, & j);
+    i = rename_tab[i];
+    nodes[i]->degree++;
+
+    j = rename_tab[j];
+    nodes[j]->degree++;
+  }
+
+  //allocating nod neighbors
+  for(i=0; i < nb_nodes; i++){
+    nodes[i]->voisins = (unsigned int*)malloc(nodes[i]->degree*sizeof(unsigned int));
+  }
+
+  fseek(f, 0, SEEK_SET);
+  while (fgets(line, SIZE_OF_LINE, f) != NULL) {
+    IGNORE_COMMENTS;
+    sscanf(line, "%u %u", & i, & j);
+    i = rename_tab[i];
+    j = rename_tab[j];
+
+    nodes[i]->voisins[nb_neighbors_added[i]] = j;
+    nb_neighbors_added[i]++;
+
+    nodes[j]->voisins[nb_neighbors_added[j]] = i;
+    nb_neighbors_added[j]++;
+
+  }
+  free(nb_neighbors_added);
+  return nodes;
+}
+
+void MKSCORE_adj(NodDegree* G, int n, int nb_iterations){
+  int i=0, l=0, j=0;
+  unsigned k = 0;
+  for(i=0; i<n; i++){
+    G[i]->score = 0.0;
+  }
+
+  // loop nb iterations
+  for(l=0; l<nb_iterations; l++){
+    for(i=0; i<n; i++){
+      for(k=0; k<G[i]->degree; k++){
+        j = G[i]->voisins[k];
+        if(j>i){
+          if (G[i]->score <= G[j]->score){
+            G[i]->score ++;
+          }
+        }else{
+          G[j]->score ++;
+        }
+      }
+    }
+  }
+
+  for(i=0; i<n; i++){
+    G[i]->score = G[i]->score/((float)nb_iterations);
+  }
+}
+
+int cmpfunc (const void * a, const void * b){
+  NodDegree f = *((NodDegree *)a);
+  NodDegree s = *((NodDegree *)b);
+  if (f->score < s->score) return  1;
+  if (f->score > s->score) return -1;
+
+  return 0;
+}
+
+int calcul_density3(NodDegree * G, int nb_nodes){
   float tmp_max=0.0;
-  float max_density = 0.0;
-  float index_max_density = 0.0;
-  int val_max_density=0;
+  float AverageDegreeDensity = 0.0;
+  float EdgeDensity = 0.0;
+  int SizeDensestCore=0;
 
   int *degree_density = (int*)malloc(nb_nodes*sizeof(int));
+  int *index_node = (int*)malloc(nb_nodes*sizeof(int));
 
   int u=0;
-  for(u=0; u<=nb_nodes; u++){
+  for(u=0; u<nb_nodes; u++){
     degree_density[u] = 0;
+    index_node[G[u]->ident] = u;
   }
 
-  FILE * f_in;
-  char line[SIZE_OF_LINE];
-  if ((f_in = fopen(in_put, "r")) == NULL) {
-    fprintf(stderr, "\nErreur: Impossible de lire le fichier %s\n", in_put);
-    return 0;
-  }
-
-  fseek(f_in, 0, SEEK_SET);
-  int i=0,j=0;
-  while (fgets(line, SIZE_OF_LINE, f_in) != NULL) {
-    IGNORE_COMMENTS;
-    sscanf(line, "%d %d", & i, & j);
-    // compare the order of removal in the heap for i and j
-    if(node_val[i]->value > node_val[j]->value){
-      degree_density[node_val[i]->index_node]++;
-    }else{
-      degree_density[node_val[j]->index_node]++;
+  printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+  int i=0;
+  unsigned j=0;
+  int index_i=0, index_j;
+  for(i=0;i<nb_nodes;i++){
+    index_i = index_node[i];
+    printf("*****%d->degree=%d\n", i, G[i]->degree);
+    for (j = 0; j<G[i]->degree; j++) {
+      printf("j=%d, node=%d\n",j, G[index_i]->voisins[j]);
+      index_j = index_node[G[index_i]->voisins[j]];
+      // printf("G[%d]=%d, G[%d]=%d\n",index_j, G[index_i]->score, index_j, G[index_j]->score);
+      if(G[index_i]->score > G[index_j]->score){
+        degree_density[i]++;
+      }else{
+        degree_density[G[index_i]->voisins[j]]++;
+      }
     }
   }
 
-  for(u=1; u<nb_nodes;u++){
+  for(u=1; u<=nb_nodes;u++){
+    printf("degree_density[%d]=%d\n", u, degree_density[u]);
     degree_density[u] = degree_density[u] + degree_density[u-1];
     tmp_max = ((float)degree_density[u])/((float)u);
-    if(max_density<tmp_max){
-      max_density = tmp_max;
-      index_max_density = (2.0*((float)degree_density[u]))/((float)(u*(u-1)));
-      val_max_density = u;
+    if(AverageDegreeDensity<tmp_max){
+      AverageDegreeDensity = tmp_max;
+      EdgeDensity = (2.0*((float)degree_density[u]))/((float)(u*(u-1)));
+      SizeDensestCore = u;
     }
   }
-  printf("Average degree densit=%f\nEdge density=%f\nSize of a densest core ordering prefix=%d\n", max_density, index_max_density, val_max_density);
+  printf("Average degree densit=%f\nEdge density=%f\nSize of a densest core ordering prefix=%d\n", AverageDegreeDensity, EdgeDensity, SizeDensestCore);
   return 1;
 }
 
+
+void exo3(char * in_put, unsigned max_node, unsigned nb_nodes, unsigned t){
+  unsigned int *rename_tab = (unsigned int*)malloc(sizeof(unsigned int)*max_node);
+  unsigned i=0, j=0, cpt=0;
+  for(i = 0; i < max_node; i++){
+    rename_tab[i] = 0;
+  }
+
+  char line[SIZE_OF_LINE];
+  FILE * f_in;
+  if ((f_in = fopen(in_put, "r")) == NULL) {
+    fprintf(stderr, "\nErreur: Impossible de lire le fichier %s\n", in_put);
+    return;
+  }
+  fseek(f_in, 0, SEEK_SET);
+  while (fgets(line, SIZE_OF_LINE, f_in) != NULL) {
+    IGNORE_COMMENTS;
+    sscanf(line, "%u %u", & i, & j);
+    rename_tab[i] = 1;
+    rename_tab[j] = 1;
+  }
+
+  for(i = 0; i <max_node; i++){
+    if(rename_tab[i] == 1){
+      rename_tab[i] = cpt;
+      cpt++;
+    }
+  }
+
+  NodDegree *G = create_adjacency_tab(f_in, rename_tab, nb_nodes);
+  MKSCORE_adj(G, nb_nodes, t);
+  qsort(G, nb_nodes, sizeof(NodDegree), cmpfunc);
+
+  calcul_density3(G, nb_nodes);
+}
+// exo 3
+
+// EXO4
 /**
 * Compute density score
 *
@@ -355,36 +511,53 @@ int MKSCORE(char * in_put, int nb_iterations, node** node_val, int max_node){
   return 1;
 }
 
-/**
-* Launch of the first exercise
-*
-* in_put : path of file inPut
-* out_put : path of file outPut
-* nb_node : the number of nodes in the file
-* max_node : the max number of the nodes
-**/
-void exo1(char * in_put, char* out_put, int nb_nodes, int max_node){
-  int i = 0; // variable to be used in the for
-  int *index_tab = (int*)malloc(sizeof(int)*max_node); // index_tab : the index for each node in the heap
-  int *N = (int*)malloc(sizeof(int)*max_node); // list to save the delete order for each node in a heap
+int calcul_density4(char * in_put, node** node_val, int nb_nodes){
+  float tmp_max=0.0;
+  float AverageDegreeDensity = 0.0;
+  float EdgeDensity = 0.0;
+  int SizeDensestCore=0;
 
-  // initialization of both lists index_tab and N to -1
-  for(i = 0; i < max_node; i++){
-    index_tab[i] = -1;
-    N[i] = -1;
+  int *degree_density = (int*)malloc(nb_nodes*sizeof(int));
+
+  int u=0;
+  for(u=0; u<=nb_nodes; u++){
+    degree_density[u] = 0;
   }
 
-  // creating the heap data structure
-  tas* heap = create_heap(in_put,index_tab, nb_nodes);
-  // compute the k-core decomposition
-  k_core_decomposition(out_put, heap, index_tab, N); // we destroy the heap in the function
+  FILE * f_in;
+  char line[SIZE_OF_LINE];
+  if ((f_in = fopen(in_put, "r")) == NULL) {
+    fprintf(stderr, "\nErreur: Impossible de lire le fichier %s\n", in_put);
+    return 0;
+  }
 
-  free(index_tab);
+  fseek(f_in, 0, SEEK_SET);
+  int i=0,j=0;
+  while (fgets(line, SIZE_OF_LINE, f_in) != NULL) {
+    IGNORE_COMMENTS;
+    sscanf(line, "%d %d", & i, & j);
+    // compare the order of removal in the heap for i and j
+    if(node_val[i]->value > node_val[j]->value){
+      degree_density[node_val[i]->index_node]++;
+    }else{
+      degree_density[node_val[j]->index_node]++;
+    }
+  }
+  printf(">>>>>> exo4>>>>>nb_nodes=%d\n", nb_nodes);
 
-  // compute the average degree density, the edge density
-  // and the size of a densest core ordering prefix
-  average_degree_density(in_put, N, nb_nodes);
-  free(N);
+  for(u=1; u<=nb_nodes;u++){
+    printf("degree_density[%d]=%d\n",u, degree_density[u]);
+
+    degree_density[u] = degree_density[u] + degree_density[u-1];
+    tmp_max = ((float)degree_density[u])/((float)u);
+    if(AverageDegreeDensity<tmp_max){
+      AverageDegreeDensity = tmp_max;
+      EdgeDensity = (2.0*((float)degree_density[u]))/((float)(u*(u-1)));
+      SizeDensestCore = u;
+    }
+  }
+  printf("Average degree densit=%f\nEdge density=%f\nSize of a densest core ordering prefix=%d\n", AverageDegreeDensity, EdgeDensity, SizeDensestCore);
+  return 1;
 }
 
 /**
@@ -404,6 +577,8 @@ void exo4(char * in_put, int max_node){
   }
 
   MKSCORE(in_put, NB_ITERATIONS, node_val, max_node);
+
+  // sort
   node* max = NULL;
   for(j=0;j<=max_node; j++){
     max=node_val[j];
@@ -417,16 +592,23 @@ void exo4(char * in_put, int max_node){
     }
     node_val[j]=max;
   }
+  /*for(h=0;h<=max_node;h++){
+    if(node_val[h]==NULL)
+      continue;
+    printf("node_val[%d]=%d\n", h, node_val[h]->value);
+  }*/
 
   // compute the average degree density, the edge density
   // and the size of a densest core ordering prefix
-  average_degree_density_exo4(in_put, node_val, max_node);
+  calcul_density4(in_put, node_val, max_node);
 
   for(j=0; j<=max_node; j++)
     if(node_val[j]!=NULL && node_val[j]!=max)
       free(node_val[j]);
   free(node_val);
 }
+
+
 
 int main(int argc, char *argv[]) {
   double temps;
@@ -436,7 +618,7 @@ int main(int argc, char *argv[]) {
   char * in_put = argv[1];
   char * out_put = "out_put/google_scholar.txt";
 
-  nb_nodes = *(nbEdgesAndNodes(in_put, 1, max_node)[0]);
+  nb_nodes = *(nb_edges_nodes(in_put, 1, max_node)[0]);
 
   printf("nb_node=%d\n",nb_nodes);
   printf("max_node=%d\n",(*max_node)+1);
@@ -444,7 +626,8 @@ int main(int argc, char *argv[]) {
   clock_t start = clock();
   // exo1(in_put,out_put, nb_nodes+1, (*max_node)+1);
 
-  exo4(in_put, *max_node);
+  exo3(in_put, (*max_node)+1, nb_nodes+1, NB_ITERATIONS);
+  exo4(in_put, (*max_node));
 
   temps = (double)(clock()-start)/(double)CLOCKS_PER_SEC;
   printf("\nRun terminée en %.10f seconde(s)!\n", temps);
