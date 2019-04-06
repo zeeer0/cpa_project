@@ -19,6 +19,7 @@ specialQuantity(degreeOfNodes, cleanDataFile);
 // Exercice 6
 degreeDistribution(degreeOfNodes);
 free(degreeOfNodes);
+/*
 // Exercice 7
 //List of Edges
   edgeList* list = readAndStoreInListEdge(cleanDataFile);
@@ -41,7 +42,7 @@ adjarray* adjArray = readAndStoreInAdjArray(args[1]);
 numberOfTriangle(adjArray);
   free(adjArray->cd);
   free(adjArray->adj);
-  free(adjArray);
+  free(adjArray);*/
 free(cleanDataFile);
  return EXIT_SUCCESS;
 }

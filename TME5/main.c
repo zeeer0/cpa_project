@@ -6,8 +6,8 @@
 #include <unistd.h>
 #include <limits.h>
 #include <string.h>
+#include <float.h>
 #include <time.h>
-#include "utils.h"
 
 /* Please set here the value of the highest number
  * representing a node in the graph
@@ -23,22 +23,42 @@ void getOutDegreeOfNodes(char* path, int* renommage, int* dout, int* nb)
     while(fscanf(stream, "%d\t%d", &nb1, &nb2) > 0){
       int array[2] = { nb1, nb2 };
       for(i=0; i< 2; i++){
-        if(renommage[array[i]]==0){ // pas de renommage
+        if(renommage[array[i]]==-1){ // pas de renommage
           renommage[array[i]]=*nb;
           (*nb)++;
          }
+       }
 
-         dout[renommage[array[i]]]+=1;
-     }
-
+     dout[renommage[nb1]]+=1;
   }
   fclose(stream);
 
-  *nb-=1;
   printf("Nombre de noeuds : %d\n", *nb);
 }
 
-void powerIter(char * path, double* P, int * dout, double alpha, int* renommage, int* nb){
+void getInDegreeOfNodes(char* path, int* renommage, int* din, int* nb)
+{
+  FILE* stream = fopen(path, "r");
+  int nb1, nb2, i;
+
+  // do not forget to use a clean file(without commentaries) otherwise it will not work
+    while(fscanf(stream, "%d\t%d", &nb1, &nb2) > 0){
+      int array[2] = { nb1, nb2 };
+      for(i=0; i< 2; i++){
+        if(renommage[array[i]]==-1){ // pas de renommage
+          renommage[array[i]]=*nb;
+          (*nb)++;
+         }
+       }
+
+     din[renommage[nb2]]+=1;
+  }
+  fclose(stream);
+
+  printf("Nombre de noeuds : %d\n", *nb);
+}
+
+double powerIter(char * path, double* P, int * dout, double alpha, int* renommage, int* nb){
   double total = 0.0;
   int i = 0;
 
@@ -66,8 +86,9 @@ for(i=0; i<(*nb); i++){
 printf("Total before normalize : %.20f\n", total);
 
 // normalize
+double toDistrub;
   if(total < 1.0){
-    double toDistrub = (1.0 - total) / doubleNb;
+    toDistrub = (1.0 - total) / doubleNb;
     for(i =0; i < (*nb); i++)
         vTemp[i]+=toDistrub;
   } else if(total > 1.0){
@@ -80,92 +101,67 @@ printf("Total before normalize : %.20f\n", total);
     P[i] = ((1.0-alpha) * vTemp[i]) + (alpha * (1.0/doubleNb));
 
   free(vTemp);
+
+  return toDistrub;
 }
 
-void printNumBestAndLowest(char* pathToNames, double* Pt, int* nb, int* renommage, int num){
-  double* best = (double*) malloc(sizeof(double)*num);
-  int* bestIndex = (int*) malloc(sizeof(int)*num);
-  double* lowest = (double*) malloc(sizeof(double)*num);
-  int* lowIndex = (int*) malloc(sizeof(int)*num);
-  double val, tmp1 = -1.0, tmp2 = -1.0;
-  int itmp1=-1, itmp2=-1, number=0,value=0, isValSet=0;
-  char *name="", *line = (char*) malloc(sizeof(char)*256), read;
-  for(int i=0; i < num; i++){
-    best[i] = -1.0;
-    lowest[i] =  2.0;
+void printNumBestAndLowest(char* pathToNames, double* Pt, int* nb, int* renommage, int num, double toDistrub){
+  char * line = (char*) malloc(sizeof(char)* 256);
+  char read, *name;
+  int isValSet=0, value=0, number=0;
+  int isItOk=1;
+
+  int * bestIndex = (int*) malloc(sizeof(int)*num);
+  double * bestValues = (double*) malloc(sizeof(double)*num);
+
+  int * lowIndex = (int*) malloc(sizeof(int)*num);
+  double * lowValues = (double*) malloc(sizeof(double)*num);
+
+  for(int i=0; i<num;i++){
+    lowIndex[i]=-1;
+    lowValues[i]=DBL_MAX;
+
+    bestIndex[i]=-1;
+    bestValues[i]=0;
   }
 
-// best
-  for(int i =0 ; i < (*nb); i++){
-    val = Pt[i];
-    for(int j = 0;j < num; j++){
-      if(val > best[j]){
-        if(j==num-1 || best[j] == -1.0){
-           best[j]=val;
-           bestIndex[j]=i;
-        }else{
-          tmp1 = best[j];
-          itmp1 = bestIndex[j];
-          best[j] = val;
-          bestIndex[j]= i;
-          for(int h = j+1; h < num; h++){
-            if(tmp1!=-1.0){
-              tmp2=best[h];
-              itmp2 = bestIndex[h];
-              best[h]=tmp1;
-              bestIndex[h]=itmp1;
-              tmp1=-1.0;
-            }else{
-              tmp1=best[h];
-              itmp1 = bestIndex[h];
-              best[h]=tmp2;
-              bestIndex[h] = itmp2;
-
-            }
+  for(int i = 0; i < num; i++){
+    for(int h=0; h < (*nb); h++){
+      if(Pt[h] > bestValues[i]){
+        isItOk=1;
+        for(int j=0; j< i; j++){
+          if(bestIndex[j]==h){
+            isItOk=0;
+            break;
           }
         }
-        break;
+        if(isItOk){
+          bestIndex[i]=h;
+          bestValues[i]=Pt[h];
+        }
       }
     }
   }
 
-tmp1 = -1.0;
-tmp2 = -1.0;
-itmp1=-1;
-itmp2=-1;
-//lowest
-  for(int i =0 ; i < (*nb); i++){
-    val = Pt[i];
-    for(int j = 0;j < num; j++){
-      if(val < lowest[j]){
-        if(j==num-1 || lowest[j] == 2.0){
-           lowest[j]=val;
-           lowIndex[j]=i;
-        }else{
-          tmp1 = lowest[j];
-          itmp1 = lowIndex[j];
-          lowest[j] = val;
-          lowIndex[j]= i;
-          for(int h = j+1; h < num; h++){
-            if(tmp1!=-1.0){
-              tmp2=lowest[h];
-              itmp2 = lowIndex[h];
-              lowest[h]=tmp1;
-              lowIndex[h]=itmp1;
-              tmp1=-1.0;
-            }else{
-              tmp1=lowest[h];
-              itmp1 = lowIndex[h];
-              lowest[h]=tmp2;
-              lowIndex[h] = itmp2;
-            }
+  for(int i = 0; i < num; i++){
+    for(int h=0; h < (*nb); h++){
+      if(Pt[h] < lowValues[i]){
+        isItOk=1;
+        for(int j=0; j< i; j++){
+          if(lowIndex[j]==h){
+            isItOk=0;
+            break;
           }
         }
-        break;
+        if(isItOk && Pt[h]!=toDistrub){
+          lowIndex[i]=h;
+          lowValues[i]=Pt[h];
+        }
       }
     }
   }
 
+// getting real indexes
 for(int i=0; i < num; i++){
     for(int j=0; j< NUMBER_OF_NODES; j++){
       if(renommage[j] == bestIndex[i]){
@@ -173,15 +169,19 @@ for(int i=0; i < num; i++){
         break;
       }
     }
+  }
+
+// lowers' real indexes this time
+  for(int i=0; i < num; i++){
     for(int j=0; j< NUMBER_OF_NODES; j++){
       if(renommage[j] == lowIndex[i]){
         lowIndex[i]=j;
-        printf("low index %d : %d\n",i, j);
         break;
       }
     }
 }
 
+// find names now
 FILE* stream = fopen(pathToNames, "r");
 
 while((read=(char) fgetc(stream)) != EOF){
@@ -201,15 +201,16 @@ while((read=(char) fgetc(stream)) != EOF){
       }
     }
 
-    // real function
+    /** real function **/
     for(int i =0; i < num; i++){
       if(value == bestIndex[i]){
-        printf("best n %d : %s\n", i+1, name);
+        printf("Best n %d : %s\n", i+1, name);
       }
       if(value == lowIndex[i]){
-        printf("low n %d : %s\n", i+1, name);
+        printf("Low n %d : %s\n", i+1, name);
       }
     }
+    /********************/
 
   }else{
     line[number]=read;
@@ -218,11 +219,11 @@ while((read=(char) fgetc(stream)) != EOF){
 }
 
   fclose(stream);
-  free(line);
-  free(best);
-  free(lowest);
-  free(bestIndex);
+  free(lowValues);
   free(lowIndex);
+  free(bestIndex);
+  free(bestValues);
+  free(line);
 }
 
 int main(int argc, char** args){
@@ -233,37 +234,132 @@ int main(int argc, char** args){
 
 /****** init *********/
 int* nb = (int*) malloc(sizeof(int));
+int* nb2 = (int*) malloc(sizeof(int));
 int* renommage = (int*) malloc(sizeof(int)*NUMBER_OF_NODES);
+int* renommage2 = (int*) malloc(sizeof(int)*NUMBER_OF_NODES);
 int* dout = (int*) malloc(sizeof(int)*NUMBER_OF_NODES);
+int* din = (int*) malloc(sizeof(int)*NUMBER_OF_NODES);
 for(int h =0; h<NUMBER_OF_NODES;h++){
  dout[h]=0;
- renommage[h]=0;
+ din[h]=0;
+ renommage[h]=-1;
+ renommage2[h]=-1;
 }
-*nb=1;
+*nb=0;
+*nb2=0;
 
 // first read : out degre of each node and renaming
 getOutDegreeOfNodes(args[1], renommage, dout, nb);
 
+getInDegreeOfNodes(args[1], renommage2, din, nb2);
+
 // create P and init with 1/number of nodes
 double * P = (double*) malloc(sizeof(double)*(*nb));
-for(int i =0; i < (*nb); i++)
+double * P2 = (double*) malloc(sizeof(double)*(*nb));
+double * P3 = (double*) malloc(sizeof(double)*(*nb));
+double * P4 = (double*) malloc(sizeof(double)*(*nb));
+double * P5 = (double*) malloc(sizeof(double)*(*nb));
+for(int i =0; i < (*nb); i++){
   P[i]=1.0/((double)*nb);
+  P2[i]=1.0/((double)*nb);
+  P3[i]=1.0/((double)*nb);
+  P4[i]=1.0/((double)*nb);
+  P5[i]=1.0/((double)*nb);
+}
 
-int ITERATION = 10;
+int ITERATION = 20;
 double alpha = 0.15;
+double toDistrub = 0.0;
 // second read : calculate P(t+1) ITERATION time
 for(int i=0; i< ITERATION; i++){
   printf("Power Iteration n° %d\n", i+1);
-  powerIter(args[1], P, dout, alpha, renommage, nb);
+  toDistrub +=powerIter(args[1], P, dout, alpha, renommage, nb);
 }
+FILE* f;
+/*
+// write to a file
+FILE* f = fopen("inDegree.txt", "w+");
+for(int i=0; i< (*nb); i++){
+  fprintf(f, "%.20f %d\n", P[i], din[i]);
+}
+fclose(f);
+
+f = fopen("outDegree.txt", "w+");
+for(int i=0; i< (*nb); i++){
+  fprintf(f, "%.20f %d\n", P[i], dout[i]);
+}
+fclose(f);
+
+// 3
+toDistrub = 0.0;
+// second read : calculate P(t+1) ITERATION time
+for(int i=0; i< ITERATION; i++){
+  printf("Power Iteration 2 n° %d\n", i+1);
+  toDistrub +=powerIter(args[1], P2, dout, 0.1, renommage, nb);
+}
+
+f = fopen("correlationsPart3.txt", "w+");
+for(int i=0; i< (*nb); i++){
+  fprintf(f, "%.20f %.20f\n", P[i], P2[i]);
+}
+fclose(f);
+
+// 4
+toDistrub = 0.0;
+// second read : calculate P(t+1) ITERATION time
+for(int i=0; i< ITERATION; i++){
+  printf("Power Iteration 3 n° %d\n", i+1);
+  toDistrub +=powerIter(args[1], P3, dout, 0.2, renommage, nb);
+}
+
+f = fopen("correlationsPart4.txt", "w+");
+for(int i=0; i< (*nb); i++){
+  fprintf(f, "%.20f %.20f\n", P[i], P3[i]);
+}
+fclose(f);
+*/
+// 5
+toDistrub = 0.0;
+// second read : calculate P(t+1) ITERATION time
+for(int i=0; i< ITERATION; i++){
+  printf("Power Iteration 4 n° %d\n", i+1);
+  toDistrub +=powerIter(args[1], P4, dout, 0.5, renommage, nb);
+}
+
+f = fopen("correlationsPart5.txt", "w+");
+for(int i=0; i< (*nb); i++){
+  fprintf(f, "%.20f %.20f\n", P[i], P4[i]);
+}
+fclose(f);
+
+// 6
+toDistrub = 0.0;
+// second read : calculate P(t+1) ITERATION time
+for(int i=0; i< ITERATION; i++){
+  printf("Power Iteration 5 n° %d\n", i+1);
+  toDistrub +=powerIter(args[1], P5, dout, 0.9, renommage, nb);
+}
+
+f = fopen("correlationsPart6.txt", "w+");
+for(int i=0; i< (*nb); i++){
+  fprintf(f, "%.20f %.20f\n", P[i], P5[i]);
+}
+fclose(f);
 
 int NUM = 5;
 // print NUM best and lowest pageranks
-printNumBestAndLowest(args[2], P, nb, renommage, NUM);
+printNumBestAndLowest(args[2], P, nb, renommage, NUM, toDistrub);
 
 free(P);
+free(P2);
+free(P3);
+free(P4);
+free(P5);
 free(renommage);
+free(renommage2);
 free(dout);
+free(din);
 free(nb);
+free(nb2);
 return EXIT_SUCCESS;
 }

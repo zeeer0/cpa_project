@@ -1,5 +1,5 @@
 EXEC=tme5.exe
-SOURCES=main.c utils.c
+SOURCES=main.c
 OBJECTS=$(SOURCES:.c=.o)
 CC=gcc
 CFLAGS=-W -Wall -lm
@@ -9,12 +9,7 @@ CFLAGS=-W -Wall -lm
 default: $(EXEC)
 
 
-utils.o: utils.c utils.h
-# exos.o: exos.c exos.h utils.h
-# vector.o:vector.c vector.h
-main.o: main.c utils.h
-#exos.h utils.h map.h
-
+main.o: main.c
 
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
