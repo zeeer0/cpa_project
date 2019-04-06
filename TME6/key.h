@@ -4,6 +4,7 @@
 typedef struct {
     unsigned int node;
     unsigned int degree;
+    unsigned int emplacement;
     int core;
     int * neighbors;
     unsigned int nb_neighbors;

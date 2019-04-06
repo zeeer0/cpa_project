@@ -1,5 +1,5 @@
 EXEC1=tme6.exe
-SOURCES1= key.c heap_array.c exo1.c utils.c
+SOURCES1= key.c heap_array.c exos.c utils.c
 OBJECTS1=$(SOURCES1:.c=.o)
 CC=gcc
 CFLAGS=-W -Wall -lm
@@ -11,7 +11,7 @@ default: $(EXEC1)
 key.o: key.h key.c
 utils.o: utils.h utils.h
 heap_array.o: heap_array.h heap_array.c
-exo1.o: exo1.c key.h heap_array.h
+exos.o: exos.c key.h heap_array.h
 
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)

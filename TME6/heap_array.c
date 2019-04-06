@@ -25,6 +25,7 @@ void percoler(tas* t, size_t i, int* index_tab) {
     t->a[min] = t->a[i];
     t->a[i] = tmp;
 
+
     index_tab[t->a[min]->node] = min;
     index_tab[t->a[i]->node] = i;
 
@@ -61,6 +62,8 @@ key * delete_min(tas *t, int* index_tab) {
     index_tab[t->a[0]->node] = -1;
     key *c = t->a[0];
     t->a[0] = t->a[(t->size-1)];
+    index_tab[t->a[0]->node] = 0;
+
     t->a[(t->size-1)] = NULL;
     t->size--;
 
@@ -95,7 +98,7 @@ tas * consiter(key** c, size_t size, int * index_tab) {
   t->a = c;
   t->size = size;
   t->capacity = size;
-  for(i = (t->size /2-1); i >= 0; i--) {
+  for(i = (t->size /2); i >= 0; i--) {
     percoler(t, i, index_tab);
   }
   return t;
