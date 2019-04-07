@@ -7,7 +7,7 @@ CFLAGS=-W -Wall -lm
 .PHONY: default clean
 
 default: $(EXEC)
-	
+
 utils.o: utils.c utils.h
 main.o: main.c utils.h
 

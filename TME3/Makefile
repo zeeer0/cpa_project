@@ -1,5 +1,5 @@
 EXEC=tme3.exe
-SOURCES=main.c exos.c fifo.c
+SOURCES=main.c fifo.c exos.c
 OBJECTS=$(SOURCES:.c=.o)
 CC=gcc
 CFLAGS=-W -Wall -lm

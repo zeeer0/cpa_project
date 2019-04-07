@@ -1,10 +1,10 @@
-# ifndef __EXOS_H__
-# define  __EXOS_H__
+# ifndef __FIFO_H__
+# define  __FIFO_H__
 
-typedef struct NodeFifo *{
+typedef struct NodeFifo{
   unsigned int index_n;
-  NodeFifo * prec;
-}NodeFifo *;
+  struct NodeFifo * prec;
+}NodeFifo;
 
 typedef struct fifo{
   NodeFifo * first;

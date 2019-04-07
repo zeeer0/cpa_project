@@ -237,7 +237,7 @@ edgeList* readAndStoreInListEdge(char* src){
 int** readAndStoreInAdjMatrix(char* src){
   // init matrix
   int numberOfNode = *(nbEdgesAndNodes(src, 0)[0]);
-  printf("Needed memory : %lu\n", (sizeof(int*)*numberOfNode)*(sizeof(int)*numberOfNode));
+  printf("Needed memory : %lu bytes (!! CTRL+C if it is too much !!)\n", (sizeof(int)*numberOfNode*numberOfNode));
   int** matrix = (int**) malloc(sizeof(int*)*numberOfNode);
   for(int i=0; i< numberOfNode; i++){
     matrix[i] = (int*) malloc(sizeof(int)*numberOfNode);
@@ -448,7 +448,7 @@ int** nb_edges_nodes(char* path, int display, unsigned * max_node){
   return numbers;
 }
 
-Node **adjacency_array(FILE *f_in, int *rename_node, unsigned nb_nodes){
+Node **adjacency_array(FILE *f_in, unsigned *rename_node, unsigned nb_nodes){
  unsigned i, j;
  char line[SIZE_LINE];
  Node **adj_nodes = (Node **)malloc(sizeof(Node*)*nb_nodes);
@@ -515,7 +515,7 @@ unsigned bfs(Node** G, unsigned *s, unsigned nb_nodes){
 
 unsigned max_connections(Node** G, unsigned *s, unsigned nb_nodes){
  fifo * FIFO = create_fifo();
- unsigned i=0, u=0, v=0, max = 0;
+ unsigned i=0, u=0, v=0;
  unsigned nb_connections = 0, max_nb_connections = 0, nb_nodes_visited=0;
 
  unsigned *Mark = (unsigned *)malloc(sizeof(unsigned)*nb_nodes);
@@ -530,10 +530,6 @@ unsigned max_connections(Node** G, unsigned *s, unsigned nb_nodes){
  	nb_connections = 1;
    nb_nodes_visited++;
 
- 	/*for(i=0; i < nb_nodes; i++)
- 	   if(Mark[i] == 0)
- 		  u = i;
-       */
    // bfs algorithm
    add(FIFO, *s);
    Mark[*s] = 1;
@@ -559,7 +555,6 @@ unsigned max_connections(Node** G, unsigned *s, unsigned nb_nodes){
    		max_nb_connections = nb_connections;
    }
 	}
- printf("%u",max_nb_connections);
  return max_nb_connections;
 
 }
@@ -592,7 +587,7 @@ unsigned diameter(Node** G, unsigned nb_nodes){
 void max_connections_diameter(char * src) {
  unsigned node_begin=0, max_connection_value = 0, diamater_value=0;
  unsigned i = 0, j=0, nb_nodes=0, nb = 0;
- unsigned* max_node=(int*) malloc(sizeof(int));
+ unsigned* max_node=(unsigned*) malloc(sizeof(int));
  Node **adj_nodes;
 
  *max_node=0;
@@ -637,12 +632,13 @@ void max_connections_diameter(char * src) {
  // the adjacency_array
  adj_nodes = adjacency_array(f_in, rename_node, nb_nodes);
 
+ printf("Exercice 8 :\n");
  // find the max connections
  max_connection_value = max_connections(adj_nodes, &node_begin, nb_nodes);
- printf("Max Connection : %d\n", max_connection_value);
+ printf("Fraction of nodes in the largest connected component : %d\n", max_connection_value);
 
 	diamater_value = diameter(adj_nodes,nb_nodes);
-	printf("diamater_value : %d \n",diamater_value);
+	printf("Lower bound : %d \n",diamater_value);
 
  // free adjacency array
  for(i=0; i < nb_nodes; i++){
@@ -650,18 +646,12 @@ void max_connections_diameter(char * src) {
    while(node){
      Node *tmp = node->next;
      free(node);
-     node = node->next;
+     node = tmp;
    }
  }
  free(adj_nodes);
  free(rename_node);
  fclose(f_in);
-}
-
-
-
-int cmpfunc (const void * a, const void * b) {
-   return ( *(unsigned*)a - *(unsigned*)b );
 }
 
 /* Exercice 9
@@ -677,8 +667,6 @@ void numberOfTriangle(adjarray* g){
   }
 
   // sort every list of neighbors
-  unsigned min = INT_MAX;
-  int indice = 0;
   for(unsigned i=0; i < g->n; i++){
     sizeU = g->cd[i+1]-g->cd[i];
     // qsort
@@ -738,6 +726,11 @@ long long unsigned intersect(unsigned * U, int sizeU, unsigned* V, int sizeV){
   }
 
   return numberOfTriangle;
+}
+
+// qsort func
+int cmpfunc (const void * a, const void * b) {
+   return ( *(unsigned*)a - *(unsigned*)b );
 }
 
 // Swapping algorithm

@@ -34,11 +34,13 @@ int main(int argc, char** args) {
   int** matrix = readAndStoreInAdjMatrix(cleanDataFile);
   free(matrix);
   // Adjacency Array
-  adjarray* adjArray = readAndStoreInAdjArray(args[1]);
+  adjarray* adjArray = readAndStoreInAdjArray(cleanDataFile);
   // Exercice 8
   max_connections_diameter(args[1]);
   // Exercice 9
   numberOfTriangle(adjArray);
+
+  
   free(adjArray->cd);
   free(adjArray->adj);
   free(adjArray);
