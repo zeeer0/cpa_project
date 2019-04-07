@@ -4,10 +4,6 @@
 #include "key.h"
 #include "heap_array.h"
 
-#define PARENT(n) ( ((n) / 2) )
-#define LEFT(n) ( (n) * 2 )
-#define RIGHT(n) ( (n) * 2 + 1 )
-
 
 /* Maintient l'invariant des tas:
    Si les sous-tas enracinés en LEFT(i) et RIGHT(i) satisfont l'invariant,
@@ -29,14 +25,13 @@ void percoler(tas* t, size_t i, int* index_tab) {
     t->a[min] = t->a[i];
     t->a[i] = tmp;
 
+
     index_tab[t->a[min]->node] = min;
     index_tab[t->a[i]->node] = i;
 
     percoler(t, min, index_tab);
-
   }
 }
-
 
 void resize(tas *t, size_t newsize) {
   t->size = newsize;
@@ -46,18 +41,13 @@ void resize(tas *t, size_t newsize) {
   }
 }
 
-
 /* Ajoute un élément à un tas en respectant l'invariant.
  */
- void  ajout(tas *t, key* c, int* tab) {
+void  ajout(tas *t, key* c, int * tab) {
    resize(t, t->size + 1);
    t->a[t->size - 1] = c;
    tab[c->node] = t->size - 1;
  }
-
-key* mintas(tas *t) {
-  return t->a[0];
-}
 
 int empty(tas *t) {
   return t->size == 0;
@@ -66,11 +56,14 @@ int empty(tas *t) {
 /* Supprime et renvoie la clé minimale d'un tas.
    Respecte l'invariant
  */
-key * supprmin(tas *t, int* index_tab) {
+key * delete_min(tas *t, int* index_tab) {
   if(t->a[0] != NULL){
     index_tab[t->a[0]->node] = -1;
     key *c = t->a[0];
     t->a[0] = t->a[(t->size-1)];
+    index_tab[t->a[0]->node] = 0;
+
+    t->a[(t->size-1)] = NULL;
     t->size--;
 
     percoler(t, 0, index_tab);
@@ -79,18 +72,79 @@ key * supprmin(tas *t, int* index_tab) {
   }
 }
 
+void heap_insert(tas* T, int index_key, int * index_tab) {
+    int parent = (index_key-1)/2;
+    while(index_key != 0 && inf(T->a[index_key], T->a[parent])) {
+      key * tmpC = T->a[index_key];
+      T->a[index_key] = T->a[parent];
+      T->a[parent] = tmpC;
+
+      index_tab[T->a[index_key]->node] = index_key;
+      index_tab[T->a[parent]->node] = parent;
+
+      index_key = parent;
+      parent = (index_key-1)/2;
+    }
+}
+
+key* removeMin(tas *t, int* index_tab) {
+
+  if(t->a[0] != NULL){
+    key *c = t->a[0];
+    t->a[0] = t->a[(t->size-1)];
+    index_tab[t->a[0]->node] = -1;
+    t->a[(t->size-1)] = NULL;
+    t->size--;
+
+    index_tab[t->a[0]->node] = 0;
+
+    if (t->size > 0)
+          siftDown(t, 0, index_tab);
+    return c;
+  }
+}
+
+void siftDown(tas* T, int nodeIndex, int* index_tab) {
+    int leftChildIndex, rightChildIndex, minIndex, tmp;
+    leftChildIndex = nodeIndex+1;
+    rightChildIndex = nodeIndex+2;
+    int heapSize = T->size;
+    if (rightChildIndex >= heapSize) {
+          if (leftChildIndex >= heapSize)
+                return;
+          else
+                minIndex = leftChildIndex;
+    } else {
+        if(inf(T->a[leftChildIndex], T->a[rightChildIndex]))
+              minIndex = leftChildIndex;
+        else
+              minIndex = rightChildIndex;
+    }
+    if(inf(T->a[minIndex], T->a[nodeIndex])){
+
+          key * tmpC = T->a[minIndex];
+          T->a[minIndex] = T->a[nodeIndex];
+          T->a[nodeIndex] = tmpC;
+
+          index_tab[T->a[minIndex]->node] = minIndex;
+          index_tab[T->a[nodeIndex]->node] = nodeIndex;
+
+          siftDown(T, minIndex, index_tab);
+    }
+}
+
 
 /* créer un tas de faible capacité sans éléments
  * le tas retourné devra être libéré par l'appelant
  */
 tas * mktas(int nb_nodes) {
   tas* t = malloc(sizeof(tas));
-  t->a = malloc((nb_nodes+1) * sizeof(key*));
-  t->capacity = nb_nodes+1;
+  t->a = malloc(nb_nodes * sizeof(key*));
+  t->capacity = nb_nodes;
   t->size = 0;
-  t->last = 0;
   return t;
 }
+
 
 /* Crée un tas à partir d'un tableau de clé,
    en utilisant un tableau de clé pour le stockage.
@@ -104,7 +158,7 @@ tas * consiter(key** c, size_t size, int * index_tab) {
   t->a = c;
   t->size = size;
   t->capacity = size;
-  for(i = t->size / 2; i >= 0; i--) {
+  for(i = (t->size /2); i >= 0; i--) {
     percoler(t, i, index_tab);
   }
   return t;
@@ -113,11 +167,4 @@ tas * consiter(key** c, size_t size, int * index_tab) {
 void destroytas(tas *t) {
   free(t->a);
   free(t);
-}
-
-void print_heap(tas* heap){
-  unsigned int i=0;
-  for(i=0; i<heap->size; i++){
-    printf("node[%d]=%d \t degree=%d\n",i,heap->a[i]->node, heap->a[i]->degree);
-  }
 }
