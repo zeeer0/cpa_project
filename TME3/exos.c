@@ -18,7 +18,7 @@
 #define NUMBER_OF_NODES 200000000
 
 #define SIZE_LINE 100
-#define NB_ITERATIONS 10
+#define NB_ITERATIONS 9
 
 #define IGNORE_COMMENTS char is_comment;        \
   sscanf(line, "%c", &is_comment);              \
