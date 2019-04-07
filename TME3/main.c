@@ -9,15 +9,15 @@ int main(int argc, char** args) {
   }
 
 // Exercice 2
-nbEdgesAndNodes(args[1], 1);
+// nbEdgesAndNodes(args[1], 1);
 // Exercice 3
-char* cleanDataFile = cleanData(args[1]);
+// char* cleanDataFile = cleanData(args[1]);
 // Exercice 4
-int* degreeOfNodes = nodeDegree(cleanDataFile);
+//int* degreeOfNodes = nodeDegree(cleanDataFile);
 // Exercice 5
-specialQuantity(degreeOfNodes, cleanDataFile);
+//specialQuantity(degreeOfNodes, cleanDataFile);
 // Exercice 6
-degreeDistribution(degreeOfNodes);
+/*degreeDistribution(degreeOfNodes);
 free(degreeOfNodes);
 // Exercice 7
 //List of Edges
@@ -35,13 +35,13 @@ free(degreeOfNodes);
   free(matrix);
 // Adjacency Array
 adjarray* adjArray = readAndStoreInAdjArray(args[1]);
-// Exercice 8
-  //BFS(..);
-// Exercice 9
+// Exercice 8*/
+max_connections_diameter(args[1]);
+/*// Exercice 9
 numberOfTriangle(adjArray);
   free(adjArray->cd);
   free(adjArray->adj);
-  free(adjArray);
-free(cleanDataFile);
+  free(adjArray);*/
+//free(cleanDataFile);
  return EXIT_SUCCESS;
 }
