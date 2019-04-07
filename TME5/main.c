@@ -14,6 +14,161 @@
  */
 #define NUMBER_OF_NODES 20000000
 
+// PROTOTYPES
+void getOutDegreeOfNodes(char* path, int* renommage, int* dout, int* nb);
+void getInDegreeOfNodes(char* path, int* renommage, int* din, int* nb);
+double powerIter(char * path, double* P, int * dout, double alpha, int* renommage, int* nb);
+void printNumBestAndLowest(char* pathToNames, double* Pt, int* nb, int* renommage, int num, double toDistrub);
+//
+
+int main(int argc, char** args){
+  if(argc < 4){
+    printf("usage : ./tme5.exe path/to/file/graph.txt path/to/file/namesOfNodes.txt numberOfIteration\n");
+    exit(1);
+  }
+
+/****** init *********/
+int* nb = (int*) malloc(sizeof(int));
+int* nb2 = (int*) malloc(sizeof(int));
+int* renommage = (int*) malloc(sizeof(int)*NUMBER_OF_NODES);
+int* renommage2 = (int*) malloc(sizeof(int)*NUMBER_OF_NODES);
+int* dout = (int*) malloc(sizeof(int)*NUMBER_OF_NODES);
+int* din = (int*) malloc(sizeof(int)*NUMBER_OF_NODES);
+for(int h =0; h<NUMBER_OF_NODES;h++){
+ dout[h]=0;
+ din[h]=0;
+ renommage[h]=-1;
+ renommage2[h]=-1;
+}
+*nb=0;
+*nb2=0;
+
+// 1. first read : out degre of each node and renaming
+getOutDegreeOfNodes(args[1], renommage, dout, nb);
+
+// in degrees
+getInDegreeOfNodes(args[1], renommage2, din, nb2);
+
+// create P and init with 1/number of nodes
+//2. P2 P3 P4 P5 for Correlations exercise
+double * P = (double*) malloc(sizeof(double)*(*nb));
+double * P2 = (double*) malloc(sizeof(double)*(*nb));
+double * P3 = (double*) malloc(sizeof(double)*(*nb));
+double * P4 = (double*) malloc(sizeof(double)*(*nb));
+double * P5 = (double*) malloc(sizeof(double)*(*nb));
+for(int i =0; i < (*nb); i++){
+  P[i]=1.0/((double)*nb);
+  P2[i]=1.0/((double)*nb);
+  P3[i]=1.0/((double)*nb);
+  P4[i]=1.0/((double)*nb);
+  P5[i]=1.0/((double)*nb);
+}
+
+int ITERATION = atoi(args[3]);
+double alpha = 0.15;
+double toDistrub = 0.0;
+
+// 1. second read : calculate P(t+1) ITERATION time
+for(int i=0; i< ITERATION; i++){
+  printf("Power Iteration n° %d\n", i+1);
+  toDistrub +=powerIter(args[1], P, dout, alpha, renommage, nb);
+}
+
+// 2. Correlations exercise
+// calculating in-degrees
+printf("Building inDegree.txt\n");
+FILE* f = fopen("inDegree.txt", "w+");
+for(int i=0; i< (*nb); i++){
+  fprintf(f, "%.20f %d\n", P[i], din[i]);
+}
+fclose(f);
+
+// calculating out-degrees
+printf("Building outDegree.txt\n");
+f = fopen("outDegree.txt", "w+");
+for(int i=0; i< (*nb); i++){
+  fprintf(f, "%.20f %d\n", P[i], dout[i]);
+}
+fclose(f);
+
+// 2.3
+toDistrub = 0.0;
+// calculate P(t+1) ITERATION time
+for(int i=0; i< ITERATION; i++){
+  printf("Power Iteration 2 n° %d\n", i+1);
+  toDistrub +=powerIter(args[1], P2, dout, 0.1, renommage, nb);
+}
+
+printf("Building correlationsPart3.txt\n");
+f = fopen("correlationsPart3.txt", "w+");
+for(int i=0; i< (*nb); i++){
+  fprintf(f, "%.20f %.20f\n", P[i], P2[i]);
+}
+fclose(f);
+
+// 2.4
+toDistrub = 0.0;
+// calculate P(t+1) ITERATION time
+for(int i=0; i< ITERATION; i++){
+  printf("Power Iteration 3 n° %d\n", i+1);
+  toDistrub +=powerIter(args[1], P3, dout, 0.2, renommage, nb);
+}
+
+printf("Building correlationsPart4.txt\n");
+f = fopen("correlationsPart4.txt", "w+");
+for(int i=0; i< (*nb); i++){
+  fprintf(f, "%.20f %.20f\n", P[i], P3[i]);
+}
+fclose(f);
+
+// 2.5
+toDistrub = 0.0;
+// calculate P(t+1) ITERATION time
+for(int i=0; i< ITERATION; i++){
+  printf("Power Iteration 4 n° %d\n", i+1);
+  toDistrub +=powerIter(args[1], P4, dout, 0.5, renommage, nb);
+}
+
+printf("Building correlationsPart5.txt\n");
+f = fopen("correlationsPart5.txt", "w+");
+for(int i=0; i< (*nb); i++){
+  fprintf(f, "%.20f %.20f\n", P[i], P4[i]);
+}
+fclose(f);
+
+// 2.6
+toDistrub = 0.0;
+// calculate P(t+1) ITERATION time
+for(int i=0; i< ITERATION; i++){
+  printf("Power Iteration 5 n° %d\n", i+1);
+  toDistrub +=powerIter(args[1], P5, dout, 0.9, renommage, nb);
+}
+
+printf("Building correlationsPart6.txt\n");
+f = fopen("correlationsPart6.txt", "w+");
+for(int i=0; i< (*nb); i++){
+  fprintf(f, "%.20f %.20f\n", P[i], P5[i]);
+}
+fclose(f);
+
+int NUM = 5;
+// 1. print NUM best and lowest pageranks
+printNumBestAndLowest(args[2], P, nb, renommage, NUM, toDistrub);
+
+free(P);
+free(P2);
+free(P3);
+free(P4);
+free(P5);
+free(renommage);
+free(renommage2);
+free(dout);
+free(din);
+free(nb);
+free(nb2);
+return EXIT_SUCCESS;
+}
+
 void getOutDegreeOfNodes(char* path, int* renommage, int* dout, int* nb)
 {
   FILE* stream = fopen(path, "r");
@@ -54,8 +209,6 @@ void getInDegreeOfNodes(char* path, int* renommage, int* din, int* nb)
      din[renommage[nb2]]+=1;
   }
   fclose(stream);
-
-  printf("Nombre de noeuds : %d\n", *nb);
 }
 
 double powerIter(char * path, double* P, int * dout, double alpha, int* renommage, int* nb){
@@ -224,142 +377,4 @@ while((read=(char) fgetc(stream)) != EOF){
   free(bestIndex);
   free(bestValues);
   free(line);
-}
-
-int main(int argc, char** args){
-  if(argc <= 2){
-    printf("usage : tme5.exe path/to/file/graph.txt path/to/file/namesOfNodes.txt\n");
-    exit(1);
-  }
-
-/****** init *********/
-int* nb = (int*) malloc(sizeof(int));
-int* nb2 = (int*) malloc(sizeof(int));
-int* renommage = (int*) malloc(sizeof(int)*NUMBER_OF_NODES);
-int* renommage2 = (int*) malloc(sizeof(int)*NUMBER_OF_NODES);
-int* dout = (int*) malloc(sizeof(int)*NUMBER_OF_NODES);
-int* din = (int*) malloc(sizeof(int)*NUMBER_OF_NODES);
-for(int h =0; h<NUMBER_OF_NODES;h++){
- dout[h]=0;
- din[h]=0;
- renommage[h]=-1;
- renommage2[h]=-1;
-}
-*nb=0;
-*nb2=0;
-
-// first read : out degre of each node and renaming
-getOutDegreeOfNodes(args[1], renommage, dout, nb);
-
-getInDegreeOfNodes(args[1], renommage2, din, nb2);
-
-// create P and init with 1/number of nodes
-double * P = (double*) malloc(sizeof(double)*(*nb));
-double * P2 = (double*) malloc(sizeof(double)*(*nb));
-double * P3 = (double*) malloc(sizeof(double)*(*nb));
-double * P4 = (double*) malloc(sizeof(double)*(*nb));
-double * P5 = (double*) malloc(sizeof(double)*(*nb));
-for(int i =0; i < (*nb); i++){
-  P[i]=1.0/((double)*nb);
-  P2[i]=1.0/((double)*nb);
-  P3[i]=1.0/((double)*nb);
-  P4[i]=1.0/((double)*nb);
-  P5[i]=1.0/((double)*nb);
-}
-
-int ITERATION = 20;
-double alpha = 0.15;
-double toDistrub = 0.0;
-// second read : calculate P(t+1) ITERATION time
-for(int i=0; i< ITERATION; i++){
-  printf("Power Iteration n° %d\n", i+1);
-  toDistrub +=powerIter(args[1], P, dout, alpha, renommage, nb);
-}
-FILE* f;
-/*
-// write to a file
-FILE* f = fopen("inDegree.txt", "w+");
-for(int i=0; i< (*nb); i++){
-  fprintf(f, "%.20f %d\n", P[i], din[i]);
-}
-fclose(f);
-
-f = fopen("outDegree.txt", "w+");
-for(int i=0; i< (*nb); i++){
-  fprintf(f, "%.20f %d\n", P[i], dout[i]);
-}
-fclose(f);
-
-// 3
-toDistrub = 0.0;
-// second read : calculate P(t+1) ITERATION time
-for(int i=0; i< ITERATION; i++){
-  printf("Power Iteration 2 n° %d\n", i+1);
-  toDistrub +=powerIter(args[1], P2, dout, 0.1, renommage, nb);
-}
-
-f = fopen("correlationsPart3.txt", "w+");
-for(int i=0; i< (*nb); i++){
-  fprintf(f, "%.20f %.20f\n", P[i], P2[i]);
-}
-fclose(f);
-
-// 4
-toDistrub = 0.0;
-// second read : calculate P(t+1) ITERATION time
-for(int i=0; i< ITERATION; i++){
-  printf("Power Iteration 3 n° %d\n", i+1);
-  toDistrub +=powerIter(args[1], P3, dout, 0.2, renommage, nb);
-}
-
-f = fopen("correlationsPart4.txt", "w+");
-for(int i=0; i< (*nb); i++){
-  fprintf(f, "%.20f %.20f\n", P[i], P3[i]);
-}
-fclose(f);
-*/
-// 5
-toDistrub = 0.0;
-// second read : calculate P(t+1) ITERATION time
-for(int i=0; i< ITERATION; i++){
-  printf("Power Iteration 4 n° %d\n", i+1);
-  toDistrub +=powerIter(args[1], P4, dout, 0.5, renommage, nb);
-}
-
-f = fopen("correlationsPart5.txt", "w+");
-for(int i=0; i< (*nb); i++){
-  fprintf(f, "%.20f %.20f\n", P[i], P4[i]);
-}
-fclose(f);
-
-// 6
-toDistrub = 0.0;
-// second read : calculate P(t+1) ITERATION time
-for(int i=0; i< ITERATION; i++){
-  printf("Power Iteration 5 n° %d\n", i+1);
-  toDistrub +=powerIter(args[1], P5, dout, 0.9, renommage, nb);
-}
-
-f = fopen("correlationsPart6.txt", "w+");
-for(int i=0; i< (*nb); i++){
-  fprintf(f, "%.20f %.20f\n", P[i], P5[i]);
-}
-fclose(f);
-
-int NUM = 5;
-// print NUM best and lowest pageranks
-printNumBestAndLowest(args[2], P, nb, renommage, NUM, toDistrub);
-
-free(P);
-free(P2);
-free(P3);
-free(P4);
-free(P5);
-free(renommage);
-free(renommage2);
-free(dout);
-free(din);
-free(nb);
-free(nb2);
-return EXIT_SUCCESS;
 }
