@@ -1,5 +1,5 @@
 EXEC=tme3.exe
-SOURCES=main.c exos.c
+SOURCES=main.c exos.c fifo.c
 OBJECTS=$(SOURCES:.c=.o)
 CC=gcc
 CFLAGS=-W -Wall -lm
@@ -8,8 +8,9 @@ CFLAGS=-W -Wall -lm
 
 default: $(EXEC)
 
-exos.o: exos.c exos.h
-main.o: main.c exos.h
+fifo.o: fifo.c fifo.h
+exos.o: exos.c exos.h fifo.h
+main.o: main.c fifo.h exos.h
 
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)

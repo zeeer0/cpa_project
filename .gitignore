@@ -1,3 +1,4 @@
+TME3/*.o
+TME3/in_put
 TME6/*.o
-TME6/in_put/
-TME6/exo3.c
+TME6/in_put
