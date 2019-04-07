@@ -4,13 +4,12 @@
 typedef struct {
     unsigned int node;
     unsigned int degree;
-    unsigned int emplacement;
+    unsigned int nb_neighbors;
     int core;
     int * neighbors;
-    unsigned int nb_neighbors;
 } key;
 
-key * parse_key(int node, int degree);
+key * create_key(int node, int degree);
 
 int eg(key* a, key* b);
 
